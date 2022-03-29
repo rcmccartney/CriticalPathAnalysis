@@ -63,22 +63,22 @@ sourceSets {
 
 startScripts.enabled = false
 
-task helloWorldServer(type: CreateStartScripts) {
-    mainClass = 'helloworld.HelloWorldServer'
-    applicationName = 'hello-world-server'
+task kvProgServer(type: CreateStartScripts) {
+    mainClass = 'kvprog.KvProgServer'
+    applicationName = 'kv-prog-server'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
-task helloWorldClient(type: CreateStartScripts) {
-    mainClass = 'helloworld.HelloWorldClient'
-    applicationName = 'hello-world-client'
+task kvProgClient(type: CreateStartScripts) {
+    mainClass = 'kvprog.KvProgClient'
+    applicationName = 'kv-prog-client'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
 applicationDistribution.into('bin') {
-    from(helloWorldServer)
-    from(helloWorldClient)
+    from(kvProgServer)
+    from(kvProgClient)
     fileMode = 0755
 }
