@@ -20,9 +20,8 @@ targetCompatibility = 1.8
 // IMPORTANT: You probably want the non-SNAPSHOT version of gRPC. Make sure you
 // are looking at a tagged version of the example and not "master"!
 
-// Feel free to delete the comment at the next line. It is just for safely
-// updating the version in our release process.
-def grpcVersion = '1.45.0' // CURRENT_GRPC_VERSION
+def daggerVersion = '2.41'
+def grpcVersion = '1.45.0'
 def protobufVersion = '3.19.2'
 def protocVersion = protobufVersion
 
@@ -30,6 +29,9 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+
+    implementation "com.google.dagger:dagger:${daggerVersion}"
+    annotationProcessor "com.google.dagger:dagger-compiler:${daggerVersion}"
 
     // examples/advanced need this for JsonFormat
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
@@ -64,14 +66,14 @@ sourceSets {
 startScripts.enabled = false
 
 task kvProgServer(type: CreateStartScripts) {
-    mainClass = 'kvprog.KvProgServer'
+    mainClass = 'kvprog.KvServerApp'
     applicationName = 'kv-prog-server'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
 task kvProgClient(type: CreateStartScripts) {
-    mainClass = 'kvprog.KvProgClient'
+    mainClass = 'kvprog.KvClientApp'
     applicationName = 'kv-prog-client'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
