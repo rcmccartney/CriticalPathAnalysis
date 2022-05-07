@@ -1,19 +1,12 @@
-package kvprog;
+package kvprog.server;
 
 import dagger.Component;
 import javax.inject.Singleton;
 
-/** The main app responsible for running the server. */
+/**
+ * The main app responsible for running the server.
+ */
 public class KvServerApp {
-  @Singleton
-  @Component(
-      modules = {
-        // ServerModule.class
-      }
-  )
-  public interface KvServer {
-    KvProgServer server();
-  }
 
   /**
    * Main launches the server from the command line.
@@ -23,5 +16,16 @@ public class KvServerApp {
     KvProgServer server = kvServer.server();
     server.start();
     server.blockUntilShutdown();
+  }
+
+  @Singleton
+  @Component(
+      modules = {
+          ServerModule.class
+      }
+  )
+  public interface KvServer {
+
+    KvProgServer server();
   }
 }

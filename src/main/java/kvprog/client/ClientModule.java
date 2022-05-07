@@ -1,13 +1,22 @@
-package kvprog;
+package kvprog.client;
 
-import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import javax.inject.Singleton;
+import kvprog.KvStoreGrpc;
+import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 
 @Module
 interface ClientModule {
+
+  @Provides
+  static KvStoreBlockingStub provideClientStub(ManagedChannel channel) {
+    return KvStoreGrpc.newBlockingStub(channel);
+  }
+
+  @Singleton
   @Provides
   static ManagedChannel provideChannel() {
     // Access a service running on the local machine on port 30428
@@ -23,4 +32,3 @@ interface ClientModule {
     return channel;
   }
 }
-

@@ -21,3 +21,9 @@ Then run the client:
 ```
 $ ./build/install/mygrpc/bin/kv-prog-client
 ```
+
+To run all tests:
+
+```
+$ ./gradlew test
+```
