@@ -34,12 +34,16 @@ dependencies {
     implementation "com.google.dagger:dagger:${daggerVersion}"
     annotationProcessor "com.google.dagger:dagger-compiler:${daggerVersion}"
 
+    implementation "com.google.dagger:dagger-grpc-server:${daggerVersion}"
+    annotationProcessor "com.google.dagger:dagger-grpc-server-processor:${daggerVersion}"
+
     implementation group: 'args4j',    name: 'args4j',         version: "${argsVersion}"
     implementation group: 'args4j',    name: 'args4j-site',    version: "${argsVersion}"
 
     // examples/advanced need this for JsonFormat
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
 
+    implementation "io.grpc:grpc-netty:${grpcVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     testImplementation "io.grpc:grpc-testing:${grpcVersion}"

@@ -1,21 +1,19 @@
 package kvprog.server;
 
-import static org.junit.Assert.assertEquals;
-
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
-import kvprog.GetRequest;
-import kvprog.KvStoreGrpc;
+import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
-import kvprog.PutReply;
 import kvprog.PutReply.Status;
-import kvprog.PutRequest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import kvprog.GetReply;
+
+import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit tests for {@link KvProgServer}.
@@ -41,10 +39,11 @@ public class KvProgServerTest {
   public void serverImpl_replyMessage() throws Exception {
     // Generate a unique in-process server name.
     String serverName = InProcessServerBuilder.generateName();
+    final HashMap<String, String> cache = new HashMap<>();
 
     // Create a server, add service, start, and register for automatic graceful shutdown.
     grpcCleanup.register(InProcessServerBuilder
-        .forName(serverName).directExecutor().addService(new KvStoreImpl()).build().start());
+        .forName(serverName).directExecutor().addService(new KvStoreImpl(cache)).build().start());
 
     KvStoreBlockingStub blockingStub = KvStoreGrpc.newBlockingStub(
         // Create a client channel and register for automatic graceful shutdown.

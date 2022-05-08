@@ -1,14 +1,15 @@
 package kvprog.client;
 
 import io.grpc.StatusRuntimeException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.inject.Inject;
 import kvprog.GetReply;
 import kvprog.GetRequest;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 import kvprog.PutReply;
 import kvprog.PutRequest;
+
+import javax.inject.Inject;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class KvProgClient {
 

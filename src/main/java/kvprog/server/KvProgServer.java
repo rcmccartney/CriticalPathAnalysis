@@ -1,10 +1,11 @@
 package kvprog.server;
 
 import io.grpc.Server;
+
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import javax.inject.Inject;
 
 public class KvProgServer {
 

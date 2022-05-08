@@ -1,17 +1,23 @@
 package kvprog.server;
 
+import dagger.grpc.server.GrpcService;
 import io.grpc.stub.StreamObserver;
-import java.util.HashMap;
-import kvprog.GetReply;
-import kvprog.GetRequest;
+import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
-import kvprog.PutReply;
 import kvprog.PutReply.Status;
-import kvprog.PutRequest;
 
+import javax.inject.Inject;
+import java.util.HashMap;
+
+@GrpcService(grpcClass = KvStoreGrpc.class)
 class KvStoreImpl extends KvStoreImplBase {
 
-  private final HashMap<String, String> cache = new HashMap<>();
+  private final HashMap<String, String> cache;
+
+  @Inject
+  KvStoreImpl(@TopComponentModule.Cache HashMap<String, String> cache) {
+    this.cache = cache;
+  }
 
   @Override
   public void put(PutRequest req, StreamObserver<PutReply> responseObserver) {

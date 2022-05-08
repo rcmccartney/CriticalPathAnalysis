@@ -1,23 +1,13 @@
 package kvprog.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.AdditionalAnswers.delegatesTo;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import java.util.HashMap;
-import kvprog.GetReply;
-import kvprog.GetRequest;
-import kvprog.KvStoreGrpc;
+import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
-import kvprog.PutReply;
 import kvprog.PutReply.Status;
-import kvprog.PutRequest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,6 +15,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+
+import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for {@link KvProgClient}.

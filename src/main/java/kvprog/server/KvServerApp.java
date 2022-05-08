@@ -1,7 +1,10 @@
 package kvprog.server;
 
-import dagger.BindsInstance;
 import dagger.Component;
+import dagger.Subcomponent;
+import dagger.grpc.server.CallScoped;
+import dagger.grpc.server.GrpcCallMetadataModule;
+import dagger.grpc.server.NettyServerModule;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -38,8 +41,8 @@ public class KvServerApp {
       return;
     }
 
-    KvServer kvServer = DaggerKvServerApp_KvServer.builder().port(kvApp.port).build();
-    KvProgServer server = kvServer.server();
+    KvServerComponent kvServerComponent = DaggerKvServerApp_KvServerComponent.builder().nettyServerModule(NettyServerModule.bindingToPort(Integer.parseInt(kvApp.port))).build();
+    KvProgServer server = kvServerComponent.server();
     server.start();
     server.blockUntilShutdown();
   }
@@ -51,16 +54,19 @@ public class KvServerApp {
   }
 
   @Singleton
-  @Component(modules = {ServerModule.class})
-  public interface KvServer {
-    KvProgServer server();
+  @Component(modules = {NettyServerModule.class, TopComponentModule.class})
+  static abstract class KvServerComponent {
+    abstract KvProgServer server();
 
-    @Component.Builder
-    interface Builder {
-      @BindsInstance
-      Builder port(@ServerModule.Port String port);
+    abstract KvServiceComponent serviceComponent(GrpcCallMetadataModule metadataModule);
 
-      KvServer build();
+    @CallScoped
+    @Subcomponent(modules = {
+        KvStoreImplGrpcServiceModule.class,
+        GrpcCallMetadataModule.class,
+        ServiceModule.class
+    })
+    interface KvServiceComponent extends KvStoreImplServiceDefinition {
     }
   }
 }
