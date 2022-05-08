@@ -64,7 +64,7 @@ public class KvServerApp {
     @Subcomponent(modules = {
         KvStoreImplGrpcServiceModule.class,
         GrpcCallMetadataModule.class,
-        ServiceModule.class
+        CountingInterceptor.CountingInterceptorModule.class
     })
     interface KvServiceComponent extends KvStoreImplServiceDefinition {
     }
