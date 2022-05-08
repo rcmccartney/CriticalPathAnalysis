@@ -20,6 +20,7 @@ targetCompatibility = 1.8
 // IMPORTANT: You probably want the non-SNAPSHOT version of gRPC. Make sure you
 // are looking at a tagged version of the example and not "master"!
 
+def argsVersion = '2.33'
 def daggerVersion = '2.41'
 def grpcVersion = '1.45.0'
 def protobufVersion = '3.19.2'
@@ -32,6 +33,9 @@ dependencies {
 
     implementation "com.google.dagger:dagger:${daggerVersion}"
     annotationProcessor "com.google.dagger:dagger-compiler:${daggerVersion}"
+
+    implementation group: 'args4j',    name: 'args4j',         version: "${argsVersion}"
+    implementation group: 'args4j',    name: 'args4j-site',    version: "${argsVersion}"
 
     // examples/advanced need this for JsonFormat
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
