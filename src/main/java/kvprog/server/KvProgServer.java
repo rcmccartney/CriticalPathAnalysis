@@ -31,7 +31,7 @@ public class KvProgServer {
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
         }
-        System.err.println("*** server shut down");
+        System.err.println("*** server shut down ***");
       }
     });
   }
