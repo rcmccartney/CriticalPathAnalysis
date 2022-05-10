@@ -13,13 +13,13 @@ $ ./gradlew installDist -PskipAndroid=true
 Run the server:
 
 ```
-$ ./build/install/mygrpc/bin/kv-prog-server
+$ ./build/install/mygrpc/bin/top-level-server
 ```
 
 Then run the client:
 
 ```
-$ ./build/install/mygrpc/bin/kv-prog-client
+$ ./build/install/mygrpc/bin/client
 ```
 
 To run all tests:

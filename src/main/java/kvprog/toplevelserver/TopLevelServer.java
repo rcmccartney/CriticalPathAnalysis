@@ -1,4 +1,4 @@
-package kvprog.server;
+package kvprog.toplevelserver;
 
 import io.grpc.Server;
 
@@ -7,14 +7,14 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-public class KvProgServer {
+public class TopLevelServer {
 
-  private static final Logger logger = Logger.getLogger(KvProgServer.class.getName());
+  private static final Logger logger = Logger.getLogger(TopLevelServer.class.getName());
 
   private final Server server;
 
   @Inject
-  KvProgServer(Server server) {
+  TopLevelServer(Server server) {
     this.server = server;
   }
 
@@ -27,7 +27,7 @@ public class KvProgServer {
         // Use stderr here since the logger may have been reset by its JVM shutdown hook.
         System.err.println("*** shutting down gRPC server since JVM is shutting down");
         try {
-          KvProgServer.this.stop();
+          TopLevelServer.this.stop();
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
         }

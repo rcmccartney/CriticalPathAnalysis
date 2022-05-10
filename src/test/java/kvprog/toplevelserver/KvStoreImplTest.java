@@ -1,4 +1,4 @@
-package kvprog.server;
+package kvprog.toplevelserver;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
@@ -18,14 +18,14 @@ import java.util.HashMap;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Unit tests for {@link KvProgServer}.
+ * Unit tests for {@link TopLevelServer}.
  *
  * <p>Note: directExecutor() makes it easier to have deterministic tests.
  * However, if your implementation uses another thread and uses streaming it is better to use
  * the default executor, to avoid hitting bug #3084.
  */
 @RunWith(JUnit4.class)
-public class KvProgServerTest {
+public class KvStoreImplTest {
   /**
    * This rule manages automatic graceful shutdown for the registered servers and channels at the
    * end of test.

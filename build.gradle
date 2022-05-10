@@ -74,15 +74,15 @@ sourceSets {
 startScripts.enabled = false
 
 task kvProgServer(type: CreateStartScripts) {
-    mainClass = 'kvprog.server.KvServerApp'
-    applicationName = 'kv-prog-server'
+    mainClass = 'kvprog.toplevelserver.ServerApp'
+    applicationName = 'top-level-server'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
 task kvProgClient(type: CreateStartScripts) {
-    mainClass = 'kvprog.client.KvClientApp'
-    applicationName = 'kv-prog-client'
+    mainClass = 'kvprog.client.ClientApp'
+    applicationName = 'client'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
