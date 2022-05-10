@@ -1,6 +1,9 @@
 package kvprog.client;
 
 import io.grpc.StatusRuntimeException;
+import kvprog.CallInfo;
+import kvprog.CallsReply;
+import kvprog.CallsRequest;
 import kvprog.GetReply;
 import kvprog.GetRequest;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
@@ -52,6 +55,22 @@ public class KvProgClient {
       logger.info("Response: " + response.getValue());
     } else {
       logger.info("Lookup failed: " + response.getFailure());
+    }
+  }
+
+  public void callData() {
+    logger.info("Fetching call data from server...");
+    CallsReply response;
+    try {
+      response = blockingStub.calls(CallsRequest.getDefaultInstance());
+    } catch (StatusRuntimeException e) {
+      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      return;
+    }
+
+    System.err.println("** Call Type : Count **");
+    for (CallInfo info : response.getCallInfoList()) {
+      System.err.println(String.format("%s : %s", info.getCallType(), info.getCount()));
     }
   }
 }

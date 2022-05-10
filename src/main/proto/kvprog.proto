@@ -12,6 +12,8 @@ service KvStore {
   rpc Put (PutRequest) returns (PutReply) {}
   // Get existing KV.
   rpc Get (GetRequest) returns (GetReply) {}
+  // Metadata about calls seen.
+  rpc Calls (CallsRequest) returns (CallsReply) {}
 }
 
 message PutRequest {
@@ -43,4 +45,16 @@ message GetReply {
     string value = 1;
     Status failure = 2;
   }
+}
+
+message CallsRequest {
+}
+
+message CallsReply {
+  repeated CallInfo call_info = 1;
+}
+
+message CallInfo {
+  string call_type = 1;
+  int64 count = 2;
 }

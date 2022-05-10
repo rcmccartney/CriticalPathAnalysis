@@ -1,21 +1,33 @@
 package kvprog.server;
 
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multiset.Entry;
 import dagger.grpc.server.GrpcService;
 import io.grpc.stub.StreamObserver;
-import kvprog.*;
-import kvprog.KvStoreGrpc.KvStoreImplBase;
-import kvprog.PutReply.Status;
-
-import javax.inject.Inject;
 import java.util.HashMap;
+import javax.inject.Inject;
+import kvprog.CallInfo;
+import kvprog.CallsReply;
+import kvprog.CallsRequest;
+import kvprog.GetReply;
+import kvprog.GetRequest;
+import kvprog.KvStoreGrpc;
+import kvprog.KvStoreGrpc.KvStoreImplBase;
+import kvprog.PutReply;
+import kvprog.PutReply.Status;
+import kvprog.PutRequest;
+import kvprog.server.TopComponentModule.Cache;
+import kvprog.server.TopComponentModule.CallData;
 
 @GrpcService(grpcClass = KvStoreGrpc.class)
 class KvStoreImpl extends KvStoreImplBase {
 
+  private final Multiset<String> calls;
   private final HashMap<String, String> cache;
 
   @Inject
-  KvStoreImpl(@TopComponentModule.Cache HashMap<String, String> cache) {
+  KvStoreImpl(@CallData Multiset<String> calls, @Cache HashMap<String, String> cache) {
+    this.calls = calls;
     this.cache = cache;
   }
 
@@ -45,6 +57,19 @@ class KvStoreImpl extends KvStoreImplBase {
     }
 
     responseObserver.onNext(reply);
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void calls(CallsRequest req, StreamObserver<CallsReply> responseObserver) {
+    CallsReply.Builder reply = CallsReply.newBuilder();
+
+    for (Entry<String> callAndCount : calls.entrySet()) {
+      reply.addCallInfo(CallInfo.newBuilder().setCallType(callAndCount.getElement())
+          .setCount(callAndCount.getCount()));
+    }
+
+    responseObserver.onNext(reply.build());
     responseObserver.onCompleted();
   }
 }

@@ -1,5 +1,7 @@
 package kvprog.server;
 
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
@@ -39,11 +41,12 @@ public class KvProgServerTest {
   public void serverImpl_replyMessage() throws Exception {
     // Generate a unique in-process server name.
     String serverName = InProcessServerBuilder.generateName();
-    final HashMap<String, String> cache = new HashMap<>();
+    Multiset<String> calls = ConcurrentHashMultiset.create();
+    HashMap<String, String> cache = new HashMap<>();
 
     // Create a server, add service, start, and register for automatic graceful shutdown.
     grpcCleanup.register(InProcessServerBuilder
-        .forName(serverName).directExecutor().addService(new KvStoreImpl(cache)).build().start());
+        .forName(serverName).directExecutor().addService(new KvStoreImpl(calls, cache)).build().start());
 
     KvStoreBlockingStub blockingStub = KvStoreGrpc.newBlockingStub(
         // Create a client channel and register for automatic graceful shutdown.
@@ -59,5 +62,8 @@ public class KvProgServerTest {
     getReply =
         blockingStub.get(GetRequest.newBuilder().setKey("100").build());
     assertEquals("100", getReply.getValue());
+
+    // The interceptor isn't registered for the InProcessServer.
+    assertEquals(0, calls.size());
   }
 }
