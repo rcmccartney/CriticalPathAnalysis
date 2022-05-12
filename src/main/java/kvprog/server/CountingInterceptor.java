@@ -35,10 +35,6 @@ class CountingInterceptor implements ServerInterceptor {
     return next.startCall(call, headers);
   }
 
-  public int countCalls(String methodName) {
-    return calls.count(methodName);
-  }
-
   @Module
   static class CountingInterceptorModule {
 
@@ -50,4 +46,3 @@ class CountingInterceptor implements ServerInterceptor {
     }
   }
 }
-
