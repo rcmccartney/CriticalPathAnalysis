@@ -21,6 +21,7 @@ targetCompatibility = 1.8
 // are looking at a tagged version of the example and not "master"!
 
 def argsVersion = '2.33'
+def autoValueVersion = '1.9'
 def daggerVersion = '2.41'
 def grpcVersion = '1.45.0'
 def protobufVersion = '3.19.2'
@@ -31,8 +32,14 @@ dependencies {
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 
+    // Use 'api' rather than 'compile' for Android or java-library projects.
+    compileOnly         "com.google.auto.value:auto-value-annotations:${autoValueVersion}"
+    annotationProcessor "com.google.auto.value:auto-value:${autoValueVersion}"
+
     implementation "com.google.dagger:dagger:${daggerVersion}"
     annotationProcessor "com.google.dagger:dagger-compiler:${daggerVersion}"
+
+    implementation "com.google.dagger:dagger-producers:${daggerVersion}"
 
     implementation "com.google.dagger:dagger-grpc-server:${daggerVersion}"
     annotationProcessor "com.google.dagger:dagger-grpc-server-processor:${daggerVersion}"
