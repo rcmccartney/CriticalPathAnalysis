@@ -5,6 +5,8 @@ import dagger.Component;
 import io.grpc.ManagedChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 import org.kohsuke.args4j.Argument;
@@ -56,7 +58,6 @@ public class ClientApp {
     Client client = DaggerClientApp_Client.builder().target(app.target).port(app.port)
         .build();
     LoadGenerator loadGen = client.loadGen();
-    ManagedChannel channel = client.channel();
 
     try {
       if (app.calls) {
@@ -70,7 +71,7 @@ public class ClientApp {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
       // resources the channel should be shut down when it will no longer be used. If it may be used
       // again leave it running.
-      channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+      client.channel().shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
     }
   }
 
@@ -82,7 +83,7 @@ public class ClientApp {
   }
 
   @Singleton
-  @Component(modules = {ClientModule.class})
+  @Component(modules = {ClientModule.class, ExecutorModule.class})
   public interface Client {
 
     LoadGenerator loadGen();

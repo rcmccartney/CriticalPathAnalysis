@@ -4,13 +4,11 @@ import io.grpc.StatusRuntimeException;
 import kvprog.CallInfo;
 import kvprog.CallsReply;
 import kvprog.CallsRequest;
-import kvprog.GetReply;
-import kvprog.GetRequest;
+import kvprog.KvStoreGrpc;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
-import kvprog.PutReply;
-import kvprog.PutRequest;
 
 import javax.inject.Inject;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,59 +16,46 @@ public class LoadGenerator {
 
   private static final Logger logger = Logger.getLogger(LoadGenerator.class.getName());
 
-  private final KvStoreBlockingStub blockingStub;
+  private KvStoreGrpc.KvStoreFutureStub stub;
 
   /**
    * Construct client for accessing server using the existing channel.
    */
   @Inject
-  public LoadGenerator(KvStoreBlockingStub blockingStub) {
-    this.blockingStub = blockingStub;
+  public LoadGenerator(KvStoreGrpc.KvStoreFutureStub stub) {
+    this.stub = stub;
   }
 
   public void put(String key, String value) {
     logger.info("Will try to put " + key + " to value " + value + " ...");
-    PutRequest request = PutRequest.newBuilder().setKey(key).setValue(value).build();
-    PutReply response;
+    ClientProductionComponent producers = DaggerClientProductionComponent
+        .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).setValue(value).build()).build();
     try {
-      response = blockingStub.put(request);
-    } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
+      logger.info(producers.sendPut().get());
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
     }
-    logger.info("Response: " + response.getStatus());
   }
 
   public void get(String key) {
     logger.info("Will try to get " + key + " ...");
-    GetRequest request = GetRequest.newBuilder().setKey(key).build();
-    GetReply response;
+    ClientProductionComponent producers = DaggerClientProductionComponent
+        .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).build()).build();
     try {
-      response = blockingStub.get(request);
-    } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
-    }
-    if (response.hasValue()) {
-      logger.info("Response: " + response.getValue());
-    } else {
-      logger.info("Lookup failed: " + response.getFailure());
+      logger.info(producers.sendGet().get());
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
     }
   }
 
   public void callData() {
     logger.info("Fetching call data from server...");
-    CallsReply response;
+    ClientProductionComponent producers = DaggerClientProductionComponent
+        .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).build()).build();
     try {
-      response = blockingStub.calls(CallsRequest.getDefaultInstance());
-    } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
-    }
-
-    System.err.println("** Call Type : Count **");
-    for (CallInfo info : response.getCallInfoList()) {
-      System.err.println(String.format("%s : %s", info.getCallType(), info.getCount()));
+      logger.info(producers.callData().get());
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
     }
   }
 }

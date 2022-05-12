@@ -82,7 +82,7 @@ public class LoadGeneratorTest {
         InProcessChannelBuilder.forName(serverName).directExecutor().build());
 
     // Create a HelloWorldClient using the in-process channel;
-    loadGen = new LoadGenerator(KvStoreGrpc.newBlockingStub(channel));
+    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel));
   }
 
   @Test

@@ -5,7 +5,6 @@ import dagger.Provides;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import kvprog.KvStoreGrpc;
-import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
@@ -17,8 +16,8 @@ import java.lang.annotation.RetentionPolicy;
 interface ClientModule {
 
   @Provides
-  static KvStoreBlockingStub provideClientStub(ManagedChannel channel) {
-    return KvStoreGrpc.newBlockingStub(channel);
+  static KvStoreGrpc.KvStoreFutureStub provideClientStub(ManagedChannel channel) {
+    return KvStoreGrpc.newFutureStub(channel);
   }
 
   @Singleton
