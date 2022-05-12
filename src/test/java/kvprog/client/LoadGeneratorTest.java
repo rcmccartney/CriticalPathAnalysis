@@ -1,5 +1,6 @@
 package kvprog.client;
 
+import com.google.common.collect.ConcurrentHashMultiset;
 import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
@@ -82,7 +83,7 @@ public class LoadGeneratorTest {
         InProcessChannelBuilder.forName(serverName).directExecutor().build());
 
     // Create a HelloWorldClient using the in-process channel;
-    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel));
+    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel), ConcurrentHashMultiset.create());
   }
 
   @Test

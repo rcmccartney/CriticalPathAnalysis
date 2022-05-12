@@ -71,7 +71,7 @@ public class ClientApp {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
       // resources the channel should be shut down when it will no longer be used. If it may be used
       // again leave it running.
-      client.channel().shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+      client.channel().shutdownNow().awaitTermination(1, TimeUnit.SECONDS);
     }
   }
 

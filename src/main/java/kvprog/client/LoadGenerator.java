@@ -1,5 +1,6 @@
 package kvprog.client;
 
+import com.google.common.collect.Multiset;
 import io.grpc.StatusRuntimeException;
 import kvprog.CallInfo;
 import kvprog.CallsReply;
@@ -16,14 +17,16 @@ public class LoadGenerator {
 
   private static final Logger logger = Logger.getLogger(LoadGenerator.class.getName());
 
-  private KvStoreGrpc.KvStoreFutureStub stub;
+  private final KvStoreGrpc.KvStoreFutureStub stub;
+  private final Multiset<String> calls;
 
   /**
    * Construct client for accessing server using the existing channel.
    */
   @Inject
-  public LoadGenerator(KvStoreGrpc.KvStoreFutureStub stub) {
+  public LoadGenerator(KvStoreGrpc.KvStoreFutureStub stub, @ClientModule.CallMetadata Multiset<String> calls) {
     this.stub = stub;
+    this.calls = calls;
   }
 
   public void put(String key, String value) {
@@ -56,6 +59,10 @@ public class LoadGenerator {
       logger.info(producers.callData().get());
     } catch (InterruptedException | ExecutionException e) {
       e.printStackTrace();
+    }
+    logger.info("Fetching call data from RPC metadata...");
+    for (String call : calls) {
+      logger.info(call);
     }
   }
 }

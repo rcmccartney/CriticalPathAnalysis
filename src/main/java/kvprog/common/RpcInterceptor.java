@@ -25,12 +25,12 @@ public class RpcInterceptor implements ServerInterceptor {
       ServerCall<RequestT, ResponseT> call,
       Metadata requestHeaders,
       ServerCallHandler<RequestT, ResponseT> next) {
+    calls.add(call.getMethodDescriptor().getFullMethodName());
     Stopwatch sw = Stopwatch.createStarted();
     return next.startCall(new ForwardingServerCall.SimpleForwardingServerCall<RequestT, ResponseT>(call) {
       @Override
       public void sendHeaders(Metadata responseHeaders) {
-        responseHeaders.put(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER), sw.elapsed().toString());
-        calls.add(call.getMethodDescriptor().getFullMethodName() + ": " + sw.elapsed().getNano());
+        responseHeaders.put(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER), call.getMethodDescriptor().getFullMethodName() + ": " + sw.elapsed().getNano());
         super.sendHeaders(responseHeaders);
       }
       public void close(Status status, Metadata trailers) {
