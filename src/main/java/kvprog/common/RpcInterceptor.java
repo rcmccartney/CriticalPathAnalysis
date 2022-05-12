@@ -1,28 +1,22 @@
-package kvprog.server;
+package kvprog.common;
 
 import com.google.common.collect.Multiset;
-import dagger.Module;
-import dagger.Provides;
-import dagger.grpc.server.ForGrpcService;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCall.Listener;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
-import java.util.Arrays;
-import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import kvprog.KvStoreGrpc;
-import kvprog.server.TopComponentModule.CallData;
+import kvprog.common.InterceptorModule.CallMetadata;
 
 @Singleton
-class CountingInterceptor implements ServerInterceptor {
+public class RpcInterceptor implements ServerInterceptor {
 
   private final Multiset<String> calls;
 
   @Inject
-  CountingInterceptor(@CallData Multiset<String> calls) {
+  RpcInterceptor(@CallMetadata Multiset<String> calls) {
     this.calls = calls;
   }
 
@@ -34,15 +28,5 @@ class CountingInterceptor implements ServerInterceptor {
     calls.add(call.getMethodDescriptor().getFullMethodName());
     return next.startCall(call, headers);
   }
-
-  @Module
-  static class CountingInterceptorModule {
-
-    @Provides
-    @ForGrpcService(KvStoreGrpc.class)
-    static List<? extends ServerInterceptor> serviceInterceptors(
-        CountingInterceptor countingInterceptor) {
-      return Arrays.asList(countingInterceptor);
-    }
-  }
 }
+

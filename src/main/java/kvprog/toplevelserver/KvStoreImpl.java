@@ -1,4 +1,4 @@
-package kvprog.server;
+package kvprog.toplevelserver;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
@@ -16,8 +16,8 @@ import kvprog.KvStoreGrpc.KvStoreImplBase;
 import kvprog.PutReply;
 import kvprog.PutReply.Status;
 import kvprog.PutRequest;
-import kvprog.server.TopComponentModule.Cache;
-import kvprog.server.TopComponentModule.CallData;
+import kvprog.common.InterceptorModule.CallMetadata;
+import kvprog.toplevelserver.TopComponentModule.Cache;
 
 @GrpcService(grpcClass = KvStoreGrpc.class)
 class KvStoreImpl extends KvStoreImplBase {
@@ -26,7 +26,7 @@ class KvStoreImpl extends KvStoreImplBase {
   private final HashMap<String, String> cache;
 
   @Inject
-  KvStoreImpl(@CallData Multiset<String> calls, @Cache HashMap<String, String> cache) {
+  KvStoreImpl(@CallMetadata Multiset<String> calls, @Cache HashMap<String, String> cache) {
     this.calls = calls;
     this.cache = cache;
   }

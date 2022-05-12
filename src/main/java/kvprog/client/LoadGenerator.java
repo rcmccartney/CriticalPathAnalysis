@@ -14,9 +14,9 @@ import javax.inject.Inject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class KvProgClient {
+public class LoadGenerator {
 
-  private static final Logger logger = Logger.getLogger(KvProgClient.class.getName());
+  private static final Logger logger = Logger.getLogger(LoadGenerator.class.getName());
 
   private final KvStoreBlockingStub blockingStub;
 
@@ -24,7 +24,7 @@ public class KvProgClient {
    * Construct client for accessing server using the existing channel.
    */
   @Inject
-  public KvProgClient(KvStoreBlockingStub blockingStub) {
+  public LoadGenerator(KvStoreBlockingStub blockingStub) {
     this.blockingStub = blockingStub;
   }
 

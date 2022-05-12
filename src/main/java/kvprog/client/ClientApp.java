@@ -16,7 +16,7 @@ import org.kohsuke.args4j.OptionHandlerFilter;
 /**
  * The main app responsible for running the client.
  */
-public class KvClientApp {
+public class ClientApp {
 
   @Option(name = "-h", usage = "print help dialogue", help = true)
   private boolean help;
@@ -27,7 +27,7 @@ public class KvClientApp {
   @Option(name = "-p", usage = "port number of server", metaVar = "PORT")
   private String port = "30428";
 
-  @Option(name = "-c", usage = "get call data from server")
+  @Option(name = "-c", usage = "get call metadata from server")
   private boolean calls;
 
   @Argument
@@ -37,8 +37,8 @@ public class KvClientApp {
    * Main launches the client from the command line.
    */
   public static void main(String[] args) throws Exception {
-    KvClientApp kvApp = new KvClientApp();
-    CmdLineParser parser = new CmdLineParser(kvApp);
+    ClientApp app = new ClientApp();
+    CmdLineParser parser = new CmdLineParser(app);
     try {
       parser.parseArgument(args);
     } catch (CmdLineException e) {
@@ -47,24 +47,24 @@ public class KvClientApp {
       System.exit(1);
     }
 
-    if (kvApp.help || (!kvApp.calls && kvApp.arguments.size() == 0) || kvApp.arguments.size() > 2
-        || (kvApp.calls && kvApp.arguments.size() != 0)) {
+    if (app.help || (!app.calls && app.arguments.size() == 0) || app.arguments.size() > 2
+        || (app.calls && app.arguments.size() != 0)) {
       printHelp(parser);
       return;
     }
 
-    KvClient kvClient = DaggerKvClientApp_KvClient.builder().target(kvApp.target).port(kvApp.port)
+    Client client = DaggerClientApp_Client.builder().target(app.target).port(app.port)
         .build();
-    KvProgClient client = kvClient.client();
-    ManagedChannel channel = kvClient.channel();
+    LoadGenerator loadGen = client.loadGen();
+    ManagedChannel channel = client.channel();
 
     try {
-      if (kvApp.calls) {
-      client.callData();
-      } else if (kvApp.arguments.size() == 1) {
-        client.get(kvApp.arguments.get(0));
+      if (app.calls) {
+        loadGen.callData();
+      } else if (app.arguments.size() == 1) {
+        loadGen.get(app.arguments.get(0));
       } else {
-        client.put(kvApp.arguments.get(0), kvApp.arguments.get(1));
+        loadGen.put(app.arguments.get(0), app.arguments.get(1));
       }
     } finally {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
@@ -77,15 +77,15 @@ public class KvClientApp {
   private static void printHelp(CmdLineParser parser) {
     parser.printUsage(System.err);
     System.err.println();
-    System.err.println("  Example: ./build/install/mygrpc/bin/kv-prog-client" + parser.printExample(
+    System.err.println("  Example: ./build/install/mygrpc/bin/client" + parser.printExample(
         OptionHandlerFilter.REQUIRED) + " key [value]");
   }
 
   @Singleton
   @Component(modules = {ClientModule.class})
-  public interface KvClient {
+  public interface Client {
 
-    KvProgClient client();
+    LoadGenerator loadGen();
 
     ManagedChannel channel();
 
@@ -98,7 +98,7 @@ public class KvClientApp {
       @BindsInstance
       Builder port(@ClientModule.ServerPort String port);
 
-      KvClient build();
+      Client build();
     }
   }
 }

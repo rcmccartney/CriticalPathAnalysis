@@ -24,14 +24,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * Unit tests for {@link KvProgClient}.
+ * Unit tests for {@link LoadGenerator}.
  *
  * <p>Note: directExecutor() makes it easier to have deterministic tests.
  * However, if your implementation uses another thread and uses streaming it is better to use the
  * default executor, to avoid hitting bug #3084.
  */
 @RunWith(JUnit4.class)
-public class KvProgClientTest {
+public class LoadGeneratorTest {
 
   /**
    * This rule manages automatic graceful shutdown for the registered servers and channels at the
@@ -66,7 +66,7 @@ public class KvProgClientTest {
             }
           }));
 
-  private KvProgClient client;
+  private LoadGenerator loadGen;
 
   @Before
   public void setUp() throws Exception {
@@ -82,14 +82,14 @@ public class KvProgClientTest {
         InProcessChannelBuilder.forName(serverName).directExecutor().build());
 
     // Create a HelloWorldClient using the in-process channel;
-    client = new KvProgClient(KvStoreGrpc.newBlockingStub(channel));
+    loadGen = new LoadGenerator(KvStoreGrpc.newBlockingStub(channel));
   }
 
   @Test
   public void get_reachesService() {
     ArgumentCaptor<GetRequest> requestCaptor = ArgumentCaptor.forClass(GetRequest.class);
 
-    client.get("missing key");
+    loadGen.get("missing key");
 
     verify(serviceImpl)
         .get(requestCaptor.capture(), ArgumentMatchers.any());
@@ -100,7 +100,7 @@ public class KvProgClientTest {
   public void put_reachesService() {
     ArgumentCaptor<PutRequest> requestCaptor = ArgumentCaptor.forClass(PutRequest.class);
 
-    client.put("100", "100");
+    loadGen.put("100", "100");
 
     verify(serviceImpl)
         .put(requestCaptor.capture(), ArgumentMatchers.any());
