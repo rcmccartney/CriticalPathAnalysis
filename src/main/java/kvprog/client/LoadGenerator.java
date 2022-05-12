@@ -1,16 +1,10 @@
 package kvprog.client;
 
 import com.google.common.collect.Multiset;
-import io.grpc.StatusRuntimeException;
-import kvprog.CallInfo;
-import kvprog.CallsReply;
-import kvprog.CallsRequest;
 import kvprog.KvStoreGrpc;
-import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 
 import javax.inject.Inject;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class LoadGenerator {
@@ -30,25 +24,31 @@ public class LoadGenerator {
   }
 
   public void put(String key, String value) {
-    logger.info("Will try to put " + key + " to value " + value + " ...");
-    ClientProductionComponent producers = DaggerClientProductionComponent
-        .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).setValue(value).build()).build();
-    try {
-      logger.info(producers.sendPut().get());
-    } catch (InterruptedException | ExecutionException e) {
-      e.printStackTrace();
+    logger.info("Will try to put " + key + " to value " + value + "  10 times.");
+    for (int i = 0; i < 10; i++) {
+      ClientProductionComponent producers = DaggerClientProductionComponent
+          .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).setValue(value).build()).build();
+      try {
+        logger.info(producers.sendPut().get());
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+      }
     }
+    callData();
   }
 
   public void get(String key) {
-    logger.info("Will try to get " + key + " ...");
-    ClientProductionComponent producers = DaggerClientProductionComponent
-        .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).build()).build();
-    try {
-      logger.info(producers.sendGet().get());
-    } catch (InterruptedException | ExecutionException e) {
-      e.printStackTrace();
+    logger.info("Will try to get " + key + " 10 times.");
+    for (int i = 0; i < 10; i++) {
+      ClientProductionComponent producers = DaggerClientProductionComponent
+          .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).build()).build();
+      try {
+        logger.info(producers.sendGet().get());
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+      }
     }
+    callData();
   }
 
   public void callData() {
