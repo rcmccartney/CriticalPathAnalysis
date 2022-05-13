@@ -23,11 +23,11 @@ import kvprog.common.ExecutorModule;
 @Singleton
 @ProductionComponent(
     modules = {
-        ClientProductionComponent.ClientProducerModule.class,
+        ClientProducerGraph.ClientProducerModule.class,
         ExecutorModule.class,
     },
-    dependencies = ClientProductionComponent.Input.class)
-interface ClientProductionComponent {
+    dependencies = ClientProducerGraph.Input.class)
+interface ClientProducerGraph {
 
   @ClientProducerModule.Get ListenableFuture<String> sendGet();
 
@@ -119,7 +119,7 @@ interface ClientProductionComponent {
 
   /** Static factory method for {@link Input.Builder} */
   static Input.Builder builder() {
-    return new AutoValue_ClientProductionComponent_Input.Builder();
+    return new AutoValue_ClientProducerGraph_Input.Builder();
   }
 
   @AutoValue
@@ -144,9 +144,9 @@ interface ClientProductionComponent {
 
       abstract Builder setCount(int value);
 
-      /** Build the {@link ClientProductionComponent} */
-      final ClientProductionComponent build() {
-        return DaggerClientProductionComponent.builder()
+      /** Build the {@link ClientProducerGraph} */
+      final ClientProducerGraph build() {
+        return DaggerClientProducerGraph.builder()
             .input(autoBuild())
             .build();
       }

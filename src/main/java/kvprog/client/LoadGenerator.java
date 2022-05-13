@@ -25,7 +25,7 @@ public class LoadGenerator {
 
   public void put(String key, String value) {
     logger.info("Will try to put " + key + " to value " + value + "  10 times.");
-    ClientProductionComponent producers = ClientProductionComponent
+    ClientProducerGraph producers = ClientProducerGraph
           .builder().setStub(stub).setKey(key).setValue(value).setCount(10).build();
     try {
       logger.info(producers.sendPut().get());
@@ -37,7 +37,7 @@ public class LoadGenerator {
 
   public void get(String key) {
     logger.info("Will try to get " + key + " 10 times.");
-    ClientProductionComponent producers = ClientProductionComponent
+    ClientProducerGraph producers = ClientProducerGraph
         .builder().setStub(stub).setKey(key).setCount(10).build();
     try {
       logger.info(producers.sendGet().get());
@@ -49,7 +49,7 @@ public class LoadGenerator {
 
   public void callData() {
     logger.info("Fetching call data from server...");
-    ClientProductionComponent producers = ClientProductionComponent
+    ClientProducerGraph producers = ClientProducerGraph
         .builder().setStub(stub).setCount(1).build();
     try {
       logger.info(producers.callData().get());
