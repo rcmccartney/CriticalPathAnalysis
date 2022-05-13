@@ -25,36 +25,32 @@ public class LoadGenerator {
 
   public void put(String key, String value) {
     logger.info("Will try to put " + key + " to value " + value + "  10 times.");
-    for (int i = 0; i < 10; i++) {
-      ClientProductionComponent producers = DaggerClientProductionComponent
-          .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).setValue(value).build()).build();
-      try {
-        logger.info(producers.sendPut().get());
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
-      }
+    ClientProductionComponent producers = ClientProductionComponent
+          .builder().setStub(stub).setKey(key).setValue(value).setCount(10).build();
+    try {
+      logger.info(producers.sendPut().get());
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
     }
     callData();
   }
 
   public void get(String key) {
     logger.info("Will try to get " + key + " 10 times.");
-    for (int i = 0; i < 10; i++) {
-      ClientProductionComponent producers = DaggerClientProductionComponent
-          .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).setKey(key).build()).build();
-      try {
-        logger.info(producers.sendGet().get());
-      } catch (InterruptedException | ExecutionException e) {
-        e.printStackTrace();
-      }
+    ClientProductionComponent producers = ClientProductionComponent
+        .builder().setStub(stub).setKey(key).setCount(10).build();
+    try {
+      logger.info(producers.sendGet().get());
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
     }
     callData();
   }
 
   public void callData() {
     logger.info("Fetching call data from server...");
-    ClientProductionComponent producers = DaggerClientProductionComponent
-        .builder().input(ClientProductionComponent.Input.newBuilder().setStub(stub).build()).build();
+    ClientProductionComponent producers = ClientProductionComponent
+        .builder().setStub(stub).setCount(1).build();
     try {
       logger.info(producers.callData().get());
     } catch (InterruptedException | ExecutionException e) {

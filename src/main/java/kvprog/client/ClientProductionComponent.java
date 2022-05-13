@@ -1,10 +1,16 @@
 package kvprog.client;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
+import dagger.multibindings.ElementsIntoSet;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
+import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import kvprog.*;
 
 import javax.inject.Qualifier;
@@ -32,15 +38,25 @@ interface ClientProductionComponent {
   @ProducerModule
   class ClientProducerModule {
 
+    @ElementsIntoSet
     @Produces
-    static ListenableFuture<GetReply> get(Input input) {
-      GetRequest request = GetRequest.newBuilder().setKey(input.key().get()).build();
-      return input.stub().get(request);
+    static Set<ListenableFuture<GetReply>> get(Input input) {
+      return IntStream.range(0, input.count())
+          .boxed()
+          .map(i -> GetRequest.newBuilder().setKey(input.key().get()).build())
+          .map(request -> input.stub().get(request))
+          .collect(ImmutableSet.toImmutableSet());
     }
 
     @Produces
     @Get
-    static String sendGet(GetReply reply) {
+    static String sendGet(Set<GetReply> reply) {
+      Set<String> vals = reply.stream().map(ClientProducerModule::convertGetReplyToString)
+          .collect(ImmutableSet.toImmutableSet());
+      return Joiner.on("\n").join(vals);
+    }
+
+    static String convertGetReplyToString(GetReply reply) {
       if (reply.hasValue()) {
         return "Response: " + reply.getValue();
       } else {
@@ -48,21 +64,27 @@ interface ClientProductionComponent {
       }
     }
 
+    @ElementsIntoSet
     @Produces
-    static ListenableFuture<PutReply> put(Input input) {
-      PutRequest request = PutRequest.newBuilder().setKey(input.key().get()).setValue(input.value().get()).build();
-      return input.stub().put(request);
+    static Set<ListenableFuture<PutReply>> put(Input input) {
+      return IntStream.range(0, input.count())
+          .boxed()
+          .map(i -> PutRequest.newBuilder().setKey(input.key().get()).setValue(input.value().get()).build())
+          .map(request -> input.stub().put(request))
+          .collect(ImmutableSet.toImmutableSet());
     }
 
     @Produces
     @Put
-    static String sendPut(PutReply response) {
-      return "Response: " + response.getStatus();
+    static String sendPut(Set<PutReply> reply) {
+      Set<String> vals =  reply.stream().map(response -> "Response: " + response.getStatus())
+          .collect(ImmutableSet.toImmutableSet());
+      return Joiner.on("\n").join(vals);
     }
 
     @Produces
-    static ListenableFuture<CallsReply> calls(Input input) {
-      return input.stub().calls(CallsRequest.getDefaultInstance());
+    static ListenableFuture<CallsReply> calls(KvStoreGrpc.KvStoreFutureStub stub) {
+      return stub.calls(CallsRequest.getDefaultInstance());
     }
 
     @Produces
@@ -95,27 +117,39 @@ interface ClientProductionComponent {
     }
   }
 
+  /** Static factory method for {@link Input.Builder} */
+  static Input.Builder builder() {
+    return new AutoValue_ClientProductionComponent_Input.Builder();
+  }
+
   @AutoValue
   abstract class Input {
-    static Builder newBuilder() {
-      return new AutoValue_ClientProductionComponent_Input.Builder();
-    }
-
     abstract KvStoreGrpc.KvStoreFutureStub stub();
 
     abstract Optional<String> key();
 
     abstract Optional<String> value();
 
+    abstract int count();
+
     @AutoValue.Builder
     abstract static class Builder {
+      abstract Input autoBuild();
+
       abstract Builder setStub(KvStoreGrpc.KvStoreFutureStub stub);
 
       abstract Builder setKey(String key);
 
       abstract Builder setValue(String value);
 
-      abstract Input build();
+      abstract Builder setCount(int value);
+
+      /** Build the {@link ClientProductionComponent} */
+      final ClientProductionComponent build() {
+        return DaggerClientProductionComponent.builder()
+            .input(autoBuild())
+            .build();
+      }
     }
   }
 }
