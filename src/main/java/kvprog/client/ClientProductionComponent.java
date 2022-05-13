@@ -10,7 +10,6 @@ import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
 import java.util.Set;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import kvprog.*;
 
 import javax.inject.Qualifier;
@@ -19,6 +18,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Optional;
+import kvprog.common.ExecutorModule;
 
 @Singleton
 @ProductionComponent(

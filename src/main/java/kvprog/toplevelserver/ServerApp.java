@@ -49,7 +49,6 @@ public class ServerApp {
       printHelp(parser);
       return;
     }
-
     ServerComponent serverComponent = DaggerServerApp_ServerComponent.builder().nettyServerModule(NettyServerModule.bindingToPort(Integer.parseInt(app.port))).build();
     TopLevelServer server = serverComponent.server();
     server.start();
