@@ -22,6 +22,7 @@ import java.util.HashMap;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -50,6 +51,12 @@ public class LoadGeneratorTest {
             public void put(PutRequest req, StreamObserver<PutReply> responseObserver) {
               cache.put(req.getKey(), req.getValue());
               responseObserver.onNext(PutReply.newBuilder().setStatus(Status.SUCCESS).build());
+              responseObserver.onCompleted();
+            }
+
+            @Override
+            public void calls(CallsRequest req, StreamObserver<CallsReply> responseObserver) {
+              responseObserver.onNext(CallsReply.getDefaultInstance());
               responseObserver.onCompleted();
             }
 
@@ -92,7 +99,7 @@ public class LoadGeneratorTest {
 
     loadGen.get("missing key");
 
-    verify(serviceImpl)
+    verify(serviceImpl, times(10))
         .get(requestCaptor.capture(), ArgumentMatchers.any());
     assertEquals("missing key", requestCaptor.getValue().getKey());
   }
@@ -103,7 +110,7 @@ public class LoadGeneratorTest {
 
     loadGen.put("100", "100");
 
-    verify(serviceImpl)
+    verify(serviceImpl, times(10))
         .put(requestCaptor.capture(), ArgumentMatchers.any());
     assertEquals("100", requestCaptor.getValue().getKey());
   }
