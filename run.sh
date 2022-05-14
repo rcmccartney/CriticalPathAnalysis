@@ -7,10 +7,26 @@ echo "************************"
 ./gradlew test || { echo 'Tests failed!' ; exit 1; }
 
 echo "************************"
-echo "* Run server"
+echo "* Run top level server"
 echo "************************"
 ./build/install/mygrpc/bin/top-level-server &
-serverPID=$!
+topServerPID=$!
+sleep 2
+read -p "Press enter to continue"
+
+echo "************************"
+echo "* Run B server"
+echo "************************"
+./build/install/mygrpc/bin/b-server &
+bServerPID=$!
+sleep 2
+read -p "Press enter to continue"
+
+echo "************************"
+echo "* Run C server"
+echo "************************"
+./build/install/mygrpc/bin/c-server &
+cServerPID=$!
 sleep 2
 read -p "Press enter to continue"
 
@@ -21,9 +37,13 @@ echo "*****************"
 ./build/install/mygrpc/bin/client 100 "a" &
 ./build/install/mygrpc/bin/client 100 &
 ./build/install/mygrpc/bin/client -c &
+./build/install/mygrpc/bin/client -p 30429 -c &
+./build/install/mygrpc/bin/client -p 30430 -c &
 sleep 5
 
 echo "*****************"
-echo "* Ending server"
+echo "* Ending servers"
 echo "*****************"
-kill $serverPID
+kill $topServerPID
+kill $bServerPID
+kill $cServerPID

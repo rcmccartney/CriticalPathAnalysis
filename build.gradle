@@ -85,9 +85,23 @@ sourceSets {
 
 startScripts.enabled = false
 
-task kvProgServer(type: CreateStartScripts) {
+task kvProgTopLevelServer(type: CreateStartScripts) {
     mainClass = 'kvprog.toplevelserver.ServerApp'
     applicationName = 'top-level-server'
+    outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
+    classpath = startScripts.classpath
+}
+
+task kvProgBServer(type: CreateStartScripts) {
+    mainClass = 'kvprog.bserver.ServerApp'
+    applicationName = 'b-server'
+    outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
+    classpath = startScripts.classpath
+}
+
+task kvProgCServer(type: CreateStartScripts) {
+    mainClass = 'kvprog.cserver.ServerApp'
+    applicationName = 'c-server'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
@@ -100,7 +114,9 @@ task kvProgClient(type: CreateStartScripts) {
 }
 
 applicationDistribution.into('bin') {
-    from(kvProgServer)
+    from(kvProgTopLevelServer)
+    from(kvProgBServer)
+    from(kvProgCServer)
     from(kvProgClient)
     fileMode = 0755
 }
