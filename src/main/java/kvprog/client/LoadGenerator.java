@@ -1,11 +1,10 @@
 package kvprog.client;
 
 import com.google.common.collect.Multiset;
-import kvprog.KvStoreGrpc;
-
-import javax.inject.Inject;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
+import javax.inject.Inject;
+import kvprog.KvStoreGrpc;
 
 public class LoadGenerator {
 
@@ -18,7 +17,8 @@ public class LoadGenerator {
    * Construct client for accessing server using the existing channel.
    */
   @Inject
-  public LoadGenerator(KvStoreGrpc.KvStoreFutureStub stub, @ClientModule.CallMetadata Multiset<String> calls) {
+  public LoadGenerator(KvStoreGrpc.KvStoreFutureStub stub,
+      @ClientModule.CallMetadata Multiset<String> calls) {
     this.stub = stub;
     this.calls = calls;
   }
@@ -26,7 +26,7 @@ public class LoadGenerator {
   public void put(String key, String value) {
     logger.info("Will try to put " + key + " to value " + value + "  10 times.");
     ClientProducerGraph producers = ClientProducerGraph
-          .builder().setStub(stub).setKey(key).setValue(value).setCount(10).build();
+        .builder().setStub(stub).setKey(key).setValue(value).setCount(10).build();
     try {
       logger.info(producers.sendPut().get());
     } catch (InterruptedException | ExecutionException e) {
@@ -50,7 +50,7 @@ public class LoadGenerator {
   public void callData() {
     logger.info("Fetching call data from server...");
     ClientProducerGraph producers = ClientProducerGraph
-        .builder().setStub(stub).setCount(1).build();
+        .builder().setStub(stub).build();
     try {
       logger.info(producers.callData().get());
     } catch (InterruptedException | ExecutionException e) {

@@ -7,6 +7,7 @@ import io.grpc.stub.StreamObserver;
 import io.perfmark.PerfMark;
 import io.perfmark.TaskCloseable;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import kvprog.CallInfo;
 import kvprog.CallsReply;
@@ -16,7 +17,6 @@ import kvprog.GetRequest;
 import kvprog.KvStoreGrpc;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
 import kvprog.PutReply;
-import kvprog.PutReply.Status;
 import kvprog.PutRequest;
 import kvprog.common.InterceptorModule.CallMetadata;
 import kvprog.toplevelserver.TopComponentModule.Cache;
@@ -36,15 +36,13 @@ class KvStoreImpl extends KvStoreImplBase {
   @Override
   public void put(PutRequest req, StreamObserver<PutReply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("Put")) {
-      PutReply reply;
-      if (req.getKey().length() > 64 || req.getValue().length() > 512) {
-        reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
-      } else {
-        cache.put(req.getKey(), req.getValue());
-        reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
+      ServerProducerGraph producers = ServerProducerGraph
+          .builder().setPutRequest(req).setCache(cache).build();
+      try {
+        responseObserver.onNext(producers.put().get());
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
       }
-
-      responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
   }
@@ -52,16 +50,13 @@ class KvStoreImpl extends KvStoreImplBase {
   @Override
   public void get(GetRequest req, StreamObserver<GetReply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("Get")) {
-      GetReply reply;
-      if (req.getKey().length() > 64) {
-        reply = GetReply.newBuilder().setFailure(GetReply.Status.SYSTEMERR).build();
-      } else if (!cache.containsKey(req.getKey())) {
-        reply = GetReply.newBuilder().setFailure(GetReply.Status.NOTFOUND).build();
-      } else {
-        reply = GetReply.newBuilder().setValue(cache.get(req.getKey())).build();
+      ServerProducerGraph producers = ServerProducerGraph
+          .builder().setGetRequest(req).setCache(cache).build();
+      try {
+        responseObserver.onNext(producers.get().get());
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
       }
-
-      responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
   }

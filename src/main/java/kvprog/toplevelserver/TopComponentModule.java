@@ -36,5 +36,7 @@ class TopComponentModule {
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface Cache {}
+  public @interface Cache {
+
+  }
 }

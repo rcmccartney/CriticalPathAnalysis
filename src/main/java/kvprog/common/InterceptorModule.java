@@ -23,5 +23,7 @@ public class InterceptorModule {
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface CallMetadata {}
+  public @interface CallMetadata {
+
+  }
 }
