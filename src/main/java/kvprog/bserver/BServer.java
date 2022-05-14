@@ -1,8 +1,6 @@
 package kvprog.bserver;
 
 import io.grpc.Server;
-import io.perfmark.PerfMark;
-import io.perfmark.traceviewer.TraceEventViewer;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -35,10 +33,6 @@ public class BServer {
         System.err.println("*** server shut down ***");
       }
     });
-
-    PerfMark.setEnabled(true);
-    PerfMark.event("My Task");
-    TraceEventViewer.writeTraceHtml();
   }
 
   void stop() throws InterruptedException {

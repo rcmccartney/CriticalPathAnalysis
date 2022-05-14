@@ -29,7 +29,7 @@ public class ServerApp {
   private boolean help;
 
   @Option(name = "-p", usage = "port number of server", metaVar = "PORT")
-  private String port = "30428";
+  private String port = "9090";
 
   /**
    * Main launches the server from the command line.

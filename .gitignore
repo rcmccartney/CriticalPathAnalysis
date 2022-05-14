@@ -60,6 +60,12 @@ fabric.properties
 # Icon must end with two \r
 Icon
 
+# Generated frontend files
+src/frontend/dist/
+src/frontend/kvprog_grpc_web_pb.js
+src/frontend/kvprog_pb.js
+src/frontend/node_modules/
+src/frontend/package-lock.json
 
 # Thumbnails
 ._*

@@ -2,7 +2,6 @@ package kvprog.toplevelserver;
 
 import io.grpc.Server;
 import io.perfmark.PerfMark;
-import io.perfmark.traceviewer.TraceEventViewer;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -37,8 +36,7 @@ public class TopLevelServer {
     });
 
     PerfMark.setEnabled(true);
-    PerfMark.event("My Task");
-    TraceEventViewer.writeTraceHtml();
+    PerfMark.event("Run Server");
   }
 
   void stop() throws InterruptedException {

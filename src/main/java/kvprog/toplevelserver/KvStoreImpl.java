@@ -6,9 +6,14 @@ import dagger.grpc.server.GrpcService;
 import io.grpc.stub.StreamObserver;
 import io.perfmark.PerfMark;
 import io.perfmark.TaskCloseable;
+
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
+
+import io.perfmark.traceviewer.TraceEventViewer;
 import kvprog.CallInfo;
 import kvprog.CallsReply;
 import kvprog.CallsRequest;
@@ -45,6 +50,11 @@ class KvStoreImpl extends KvStoreImplBase {
       }
       responseObserver.onCompleted();
     }
+    try {
+      TraceEventViewer.writeTraceHtml();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -58,6 +68,11 @@ class KvStoreImpl extends KvStoreImplBase {
         e.printStackTrace();
       }
       responseObserver.onCompleted();
+    }
+    try {
+      TraceEventViewer.writeTraceHtml();
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
