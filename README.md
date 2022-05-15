@@ -44,6 +44,7 @@ so there are significantly more dependencies:
 * [docker](https://www.docker.com/)
 * [python3](https://www.python.org/downloads/)
 * On Mac: [Command Line Tools package](https://apple.stackexchange.com/questions/254380/why-am-i-getting-an-invalid-active-developer-path-when-attempting-to-use-git-a)
+* Optional: [gRPC-Web Dev Tools](https://github.com/SafetyCulture/grpc-web-devtools)
 
 Once all dependencies are installed, use the following script:
 
