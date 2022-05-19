@@ -60,7 +60,7 @@ public class ServerApp {
     parser.printUsage(System.err);
     System.err.println();
     System.err.println(
-        "  Example: ./build/install/mygrpc/bin/top-level-server" + parser.printExample(
+        "  Example: ./build/install/mygrpc/bin/b-server" + parser.printExample(
             OptionHandlerFilter.REQUIRED));
   }
 

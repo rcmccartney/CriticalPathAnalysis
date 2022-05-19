@@ -60,7 +60,7 @@ public class ServerApp {
   private static void printHelp(CmdLineParser parser) {
     parser.printUsage(System.err);
     System.err.println();
-    System.err.println("  Example: ./build/install/mygrpc/bin/top-level-server" + parser.printExample(OptionHandlerFilter.REQUIRED));
+    System.err.println("  Example: ./build/install/mygrpc/bin/c-server" + parser.printExample(OptionHandlerFilter.REQUIRED));
   }
 
   @Singleton
