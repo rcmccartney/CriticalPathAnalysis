@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "kvprog";
+
+package kvprog;
+
+service C {
+  rpc C1 (C1Request) returns (C1Reply) {}
+  rpc C2 (C2Request) returns (C2Reply) {}
+}
+
+message C1Request {}
+
+message C1Reply {}
+
+message C2Request {}
+
+message C2Reply {}

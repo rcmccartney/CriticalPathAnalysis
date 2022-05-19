@@ -2,8 +2,6 @@ syntax = "proto3";
 
 option java_multiple_files = true;
 option java_package = "kvprog";
-option java_outer_classname = "KvProto";
-option objc_class_prefix = "KVP";
 
 package kvprog;
 

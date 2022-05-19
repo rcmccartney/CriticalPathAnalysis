@@ -12,12 +12,9 @@ import io.grpc.ServerInterceptor;
 import java.util.Arrays;
 import java.util.List;
 import javax.inject.Singleton;
-import kvprog.KvStoreGrpc;
+import kvprog.BGrpc;
 import kvprog.common.InterceptorModule;
 import kvprog.common.RpcInterceptor;
-import kvprog.bserver.DaggerServerApp_ServerComponent;
-import kvprog.bserver.KvStoreImplGrpcServiceModule;
-import kvprog.bserver.KvStoreImplServiceDefinition;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -27,6 +24,7 @@ import org.kohsuke.args4j.OptionHandlerFilter;
  * The main app responsible for running the server.
  */
 public class ServerApp {
+
   @Option(name = "-h", usage = "print help dialogue", help = true)
   private boolean help;
 
@@ -51,7 +49,8 @@ public class ServerApp {
       printHelp(parser);
       return;
     }
-    ServerComponent serverComponent = DaggerServerApp_ServerComponent.builder().nettyServerModule(NettyServerModule.bindingToPort(Integer.parseInt(app.port))).build();
+    ServerComponent serverComponent = DaggerServerApp_ServerComponent.builder()
+        .nettyServerModule(NettyServerModule.bindingToPort(Integer.parseInt(app.port))).build();
     BServer server = serverComponent.server();
     server.start();
     server.blockUntilShutdown();
@@ -60,29 +59,34 @@ public class ServerApp {
   private static void printHelp(CmdLineParser parser) {
     parser.printUsage(System.err);
     System.err.println();
-    System.err.println("  Example: ./build/install/mygrpc/bin/top-level-server" + parser.printExample(OptionHandlerFilter.REQUIRED));
+    System.err.println(
+        "  Example: ./build/install/mygrpc/bin/top-level-server" + parser.printExample(
+            OptionHandlerFilter.REQUIRED));
   }
 
   @Singleton
   @Component(modules = {NettyServerModule.class, BComponentModule.class, InterceptorModule.class})
   static abstract class ServerComponent {
+
     abstract BServer server();
 
     abstract ServiceComponent serviceComponent(GrpcCallMetadataModule metadataModule);
 
     @CallScoped
     @Subcomponent(modules = {
-        KvStoreImplGrpcServiceModule.class,
+        BImplGrpcServiceModule.class,
         GrpcCallMetadataModule.class,
-        KvStoreInterceptorModule.class
+        BInterceptorModule.class
     })
-    interface ServiceComponent extends KvStoreImplServiceDefinition {
+    interface ServiceComponent extends BImplServiceDefinition {
+
     }
 
     @Module
-    static class KvStoreInterceptorModule {
+    static class BInterceptorModule {
+
       @Provides
-      @ForGrpcService(KvStoreGrpc.class)
+      @ForGrpcService(BGrpc.class)
       static List<? extends ServerInterceptor> serviceInterceptors(
           RpcInterceptor interceptor) {
         return Arrays.asList(interceptor);
