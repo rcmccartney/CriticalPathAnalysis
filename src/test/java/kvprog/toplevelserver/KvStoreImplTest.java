@@ -2,12 +2,15 @@ package kvprog.toplevelserver;
 
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
+import io.grpc.ManagedChannel;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 import kvprog.PutReply.Status;
+import kvprog.bserver.BImpl;
+import kvprog.cserver.CImpl;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,17 +43,29 @@ public class KvStoreImplTest {
   @Test
   public void serverImpl_replyMessage() throws Exception {
     // Generate a unique in-process server name.
-    String serverName = InProcessServerBuilder.generateName();
+    String topServerName = InProcessServerBuilder.generateName();
+    String bServerName = InProcessServerBuilder.generateName();
+    String cServerName = InProcessServerBuilder.generateName();
     Multiset<String> calls = ConcurrentHashMultiset.create();
     HashMap<String, String> cache = new HashMap<>();
 
     // Create a server, add service, start, and register for automatic graceful shutdown.
     grpcCleanup.register(InProcessServerBuilder
-        .forName(serverName).directExecutor().addService(new KvStoreImpl(calls, cache)).build().start());
+        .forName(cServerName).directExecutor().addService(new CImpl()).build().start());
+    ManagedChannel channel = grpcCleanup.register(
+        InProcessChannelBuilder.forName(cServerName).directExecutor().build());
+    CGrpc.CFutureStub cStub = CGrpc.newFutureStub(channel);
+    grpcCleanup.register(InProcessServerBuilder
+        .forName(bServerName).directExecutor().addService(new BImpl(cStub)).build().start());
+    channel = grpcCleanup.register(
+        InProcessChannelBuilder.forName(bServerName).directExecutor().build());
+    BGrpc.BFutureStub bStub = BGrpc.newFutureStub(channel);
+    grpcCleanup.register(InProcessServerBuilder
+        .forName(topServerName).directExecutor().addService(new KvStoreImpl(calls, cache, bStub, cStub)).build().start());
 
     KvStoreBlockingStub blockingStub = KvStoreGrpc.newBlockingStub(
         // Create a client channel and register for automatic graceful shutdown.
-        grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+        grpcCleanup.register(InProcessChannelBuilder.forName(topServerName).directExecutor().build()));
 
     GetReply getReply =
         blockingStub.get(GetRequest.newBuilder().setKey("missing key").build());

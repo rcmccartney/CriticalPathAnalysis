@@ -9,13 +9,7 @@ import dagger.grpc.server.ForGrpcService;
 import dagger.grpc.server.GrpcCallMetadataModule;
 import dagger.grpc.server.NettyServerModule;
 import io.grpc.ServerInterceptor;
-import java.util.Arrays;
-import java.util.List;
-import javax.inject.Singleton;
-import kvprog.KvStoreGrpc;
-import kvprog.cserver.DaggerServerApp_ServerComponent;
-import kvprog.cserver.KvStoreImplGrpcServiceModule;
-import kvprog.cserver.KvStoreImplServiceDefinition;
+import kvprog.CGrpc;
 import kvprog.common.InterceptorModule;
 import kvprog.common.RpcInterceptor;
 import org.kohsuke.args4j.CmdLineException;
@@ -23,10 +17,15 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.OptionHandlerFilter;
 
+import javax.inject.Singleton;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * The main app responsible for running the server.
  */
 public class ServerApp {
+
   @Option(name = "-h", usage = "print help dialogue", help = true)
   private boolean help;
 
@@ -51,6 +50,7 @@ public class ServerApp {
       printHelp(parser);
       return;
     }
+
     ServerComponent serverComponent = DaggerServerApp_ServerComponent.builder().nettyServerModule(NettyServerModule.bindingToPort(Integer.parseInt(app.port))).build();
     CServer server = serverComponent.server();
     server.start();
@@ -66,23 +66,24 @@ public class ServerApp {
   @Singleton
   @Component(modules = {NettyServerModule.class, CComponentModule.class, InterceptorModule.class})
   static abstract class ServerComponent {
+
     abstract CServer server();
 
     abstract ServiceComponent serviceComponent(GrpcCallMetadataModule metadataModule);
 
     @CallScoped
     @Subcomponent(modules = {
-        KvStoreImplGrpcServiceModule.class,
+        CImplGrpcServiceModule.class,
         GrpcCallMetadataModule.class,
-        KvStoreInterceptorModule.class
+        CInterceptorModule.class
     })
-    interface ServiceComponent extends KvStoreImplServiceDefinition {
+    interface ServiceComponent extends CImplServiceDefinition {
     }
 
     @Module
-    static class KvStoreInterceptorModule {
+    static class CInterceptorModule {
       @Provides
-      @ForGrpcService(KvStoreGrpc.class)
+      @ForGrpcService(CGrpc.class)
       static List<? extends ServerInterceptor> serviceInterceptors(
           RpcInterceptor interceptor) {
         return Arrays.asList(interceptor);

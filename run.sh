@@ -65,8 +65,6 @@ echo "*****************"
 ./build/install/mygrpc/bin/client 100 "a" &
 ./build/install/mygrpc/bin/client 100 &
 ./build/install/mygrpc/bin/client -c &
-./build/install/mygrpc/bin/client -p 30429 -c &
-./build/install/mygrpc/bin/client -p 30430 -c &
 sleep 5
 read -p "Press enter to continue"
 

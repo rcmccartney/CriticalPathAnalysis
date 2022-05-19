@@ -5,15 +5,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
-import java.util.HashMap;
 import javax.inject.Singleton;
-import kvprog.GetReply;
-import kvprog.GetRequest;
-import kvprog.PutReply;
-import kvprog.PutReply.Status;
-import kvprog.PutRequest;
-import kvprog.cserver.AutoValue_ServerProducerGraph_Input;
-import kvprog.cserver.DaggerServerProducerGraph;
+
+import kvprog.C1Reply;
+import kvprog.C1Request;
+import kvprog.C2Reply;
+import kvprog.C2Request;
 import kvprog.common.ExecutorModule;
 
 @Singleton
@@ -29,63 +26,44 @@ interface ServerProducerGraph {
    * Static factory method for {@link Input.Builder}
    */
   static Input.Builder builder() {
-    return new AutoValue_ServerProducerGraph_Input.Builder().setGetRequest(
-            GetRequest.getDefaultInstance())
-        .setPutRequest(PutRequest.getDefaultInstance());
+    return new AutoValue_ServerProducerGraph_Input.Builder().setC1Request(
+            C1Request.getDefaultInstance())
+        .setC2Request(C2Request.getDefaultInstance());
   }
 
-  ListenableFuture<GetReply> get();
+  ListenableFuture<C1Reply> c1();
 
-  ListenableFuture<PutReply> put();
+  ListenableFuture<C2Reply> c2();
 
   @ProducerModule
   class ServerProducerModule {
 
     @Produces
-    static GetReply get(GetRequest request, HashMap<String, String> cache) {
-      GetReply reply;
-      if (request.getKey().length() > 64) {
-        reply = GetReply.newBuilder().setFailure(GetReply.Status.SYSTEMERR).build();
-      } else if (!cache.containsKey(request.getKey())) {
-        reply = GetReply.newBuilder().setFailure(GetReply.Status.NOTFOUND).build();
-      } else {
-        reply = GetReply.newBuilder().setValue(cache.get(request.getKey())).build();
-      }
-      return reply;
+    static C1Reply c1(C1Request request) {
+      return C1Reply.getDefaultInstance();
     }
 
     @Produces
-    static PutReply put(PutRequest request, HashMap<String, String> cache) {
-      PutReply reply;
-      if (request.getKey().length() > 64 || request.getValue().length() > 512) {
-        reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
-      } else {
-        cache.put(request.getKey(), request.getValue());
-        reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
-      }
-      return reply;
+    static C2Reply c2(C2Request request) {
+      return C2Reply.getDefaultInstance();
     }
   }
 
   @AutoValue
   abstract class Input {
 
-    abstract HashMap<String, String> cache();
+    abstract C1Request c1Request();
 
-    abstract GetRequest getRequest();
-
-    abstract PutRequest putRequest();
+    abstract C2Request c2Request();
 
     @AutoValue.Builder
     abstract static class Builder {
 
       abstract Input autoBuild();
 
-      abstract Builder setCache(HashMap<String, String> value);
+      abstract Builder setC1Request(C1Request value);
 
-      abstract Builder setGetRequest(GetRequest value);
-
-      abstract Builder setPutRequest(PutRequest value);
+      abstract Builder setC2Request(C2Request value);
 
       /**
        * Build the {@link ServerProducerGraph}

@@ -1,31 +1,29 @@
-package kvprog.bserver;
+package kvprog.cserver;
 
 import dagger.grpc.server.GrpcService;
 import io.grpc.stub.StreamObserver;
 import io.perfmark.PerfMark;
 import io.perfmark.TaskCloseable;
 import kvprog.*;
-import kvprog.BGrpc.BImplBase;
+import kvprog.CGrpc.CImplBase;
 
 import javax.inject.Inject;
 import java.util.concurrent.ExecutionException;
 
-@GrpcService(grpcClass = BGrpc.class)
-public class BImpl extends BImplBase {
-  private final CGrpc.CFutureStub stub;
+@GrpcService(grpcClass = CGrpc.class)
+public class CImpl extends CImplBase {
 
   @Inject
-  public BImpl(CGrpc.CFutureStub stub) {
-    this.stub = stub;
+  public CImpl() {
   }
 
   @Override
-  public void b1(B1Request req, StreamObserver<B1Reply> responseObserver) {
-    try (TaskCloseable task = PerfMark.traceTask("B1")) {
+  public void c1(C1Request req, StreamObserver<C1Reply> responseObserver) {
+    try (TaskCloseable task = PerfMark.traceTask("C1")) {
       ServerProducerGraph producers = ServerProducerGraph
-          .builder().setB1Request(req).build();
+          .builder().setC1Request(req).build();
       try {
-        responseObserver.onNext(producers.b1().get());
+        responseObserver.onNext(producers.c1().get());
       } catch (InterruptedException | ExecutionException e) {
         e.printStackTrace();
       }
@@ -34,12 +32,12 @@ public class BImpl extends BImplBase {
   }
 
   @Override
-  public void b2(B2Request req, StreamObserver<B2Reply> responseObserver) {
-    try (TaskCloseable task = PerfMark.traceTask("B2")) {
+  public void c2(C2Request req, StreamObserver<C2Reply> responseObserver) {
+    try (TaskCloseable task = PerfMark.traceTask("C2")) {
       ServerProducerGraph producers = ServerProducerGraph
-          .builder().setB2Request(req).build();
+          .builder().setC2Request(req).build();
       try {
-        responseObserver.onNext(producers.b2().get());
+        responseObserver.onNext(producers.c2().get());
       } catch (InterruptedException | ExecutionException e) {
         e.printStackTrace();
       }
