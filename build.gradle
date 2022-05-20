@@ -61,6 +61,9 @@ dependencies {
     implementation 'io.perfmark:perfmark-api:0.25.0'
     // Only needed for applications, not libraries.
     implementation 'io.perfmark:perfmark-traceviewer:0.25.0'
+
+    // https://mavenlibs.com/maven/dependency/org.webjars.npm/d3
+    implementation 'org.webjars.npm:d3:7.3.0'
 }
 
 protobuf {
