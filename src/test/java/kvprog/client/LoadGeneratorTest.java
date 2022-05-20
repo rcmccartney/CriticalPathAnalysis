@@ -90,7 +90,8 @@ public class LoadGeneratorTest {
         InProcessChannelBuilder.forName(serverName).directExecutor().build());
 
     // Create a HelloWorldClient using the in-process channel;
-    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel), ConcurrentHashMultiset.create());
+    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel),
+        ConcurrentHashMultiset.create());
   }
 
   @Test
@@ -99,7 +100,7 @@ public class LoadGeneratorTest {
 
     loadGen.get("missing key");
 
-    verify(serviceImpl, times(10))
+    verify(serviceImpl, times(1))
         .get(requestCaptor.capture(), ArgumentMatchers.any());
     assertEquals("missing key", requestCaptor.getValue().getKey());
   }
@@ -110,7 +111,7 @@ public class LoadGeneratorTest {
 
     loadGen.put("100", "100");
 
-    verify(serviceImpl, times(10))
+    verify(serviceImpl, times(1))
         .put(requestCaptor.capture(), ArgumentMatchers.any());
     assertEquals("100", requestCaptor.getValue().getKey());
   }

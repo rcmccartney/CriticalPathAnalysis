@@ -4,14 +4,13 @@ import dagger.Module;
 import dagger.Provides;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import kvprog.BGrpc;
-import kvprog.CGrpc;
-
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import javax.inject.Qualifier;
+import javax.inject.Singleton;
+import kvprog.BGrpc;
+import kvprog.CGrpc;
 
 @Module
 interface BackendModule {

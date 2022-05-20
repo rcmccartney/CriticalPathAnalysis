@@ -7,6 +7,8 @@ import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
 import java.util.HashMap;
+import kvprog.BGrpc;
+import kvprog.CGrpc;
 import kvprog.GetReply;
 import kvprog.GetRequest;
 import kvprog.PutReply;
@@ -42,6 +44,18 @@ interface ServerProducerGraph {
   class ServerProducerModule {
 
     @Produces
+    static PutReply put(PutRequest request, GetReply getReply, HashMap<String, String> cache) {
+      PutReply reply;
+      if (request.getKey().length() > 64 || request.getValue().length() > 512) {
+        reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
+      } else {
+        cache.put(request.getKey(), request.getValue());
+        reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
+      }
+      return reply;
+    }
+
+    @Produces
     static GetReply get(GetRequest request, HashMap<String, String> cache) {
       GetReply reply;
       if (request.getKey().length() > 64) {
@@ -53,22 +67,14 @@ interface ServerProducerGraph {
       }
       return reply;
     }
-
-    @Produces
-    static PutReply put(PutRequest request, HashMap<String, String> cache) {
-      PutReply reply;
-      if (request.getKey().length() > 64 || request.getValue().length() > 512) {
-        reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
-      } else {
-        cache.put(request.getKey(), request.getValue());
-        reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
-      }
-      return reply;
-    }
   }
 
   @AutoValue
   abstract class Input {
+
+    abstract BGrpc.BFutureStub bStub();
+
+    abstract CGrpc.CFutureStub cStub();
 
     abstract HashMap<String, String> cache();
 
@@ -80,6 +86,10 @@ interface ServerProducerGraph {
     abstract static class Builder {
 
       abstract Input autoBuild();
+
+      abstract Builder setBStub(BGrpc.BFutureStub value);
+
+      abstract Builder setCStub(CGrpc.CFutureStub value);
 
       abstract Builder setCache(HashMap<String, String> value);
 

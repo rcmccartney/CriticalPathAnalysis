@@ -1,7 +1,10 @@
 package kvprog.toplevelserver;
 
-import dagger.*;
+import dagger.BindsInstance;
+import dagger.Component;
 import dagger.Module;
+import dagger.Provides;
+import dagger.Subcomponent;
 import dagger.grpc.server.CallScoped;
 import dagger.grpc.server.ForGrpcService;
 import dagger.grpc.server.GrpcCallMetadataModule;
@@ -9,20 +12,20 @@ import dagger.grpc.server.NettyServerModule;
 import io.grpc.ServerInterceptor;
 import java.util.Arrays;
 import java.util.List;
+import javax.inject.Singleton;
 import kvprog.KvStoreGrpc;
-import kvprog.common.RpcInterceptor;
 import kvprog.common.InterceptorModule;
+import kvprog.common.RpcInterceptor;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.OptionHandlerFilter;
 
-import javax.inject.Singleton;
-
 /**
  * The main app responsible for running the server.
  */
 public class ServerApp {
+
   @Option(name = "-h", usage = "print help dialogue", help = true)
   private boolean help;
 
@@ -75,18 +78,23 @@ public class ServerApp {
   private static void printHelp(CmdLineParser parser) {
     parser.printUsage(System.err);
     System.err.println();
-    System.err.println("  Example: ./build/install/mygrpc/bin/top-level-server" + parser.printExample(OptionHandlerFilter.REQUIRED));
+    System.err.println(
+        "  Example: ./build/install/mygrpc/bin/top-level-server" + parser.printExample(
+            OptionHandlerFilter.REQUIRED));
   }
 
   @Singleton
-  @Component(modules = {NettyServerModule.class, TopComponentModule.class, InterceptorModule.class, BackendModule.class})
+  @Component(modules = {NettyServerModule.class, TopComponentModule.class, InterceptorModule.class,
+      BackendModule.class})
   static abstract class ServerComponent {
+
     abstract TopLevelServer server();
 
     abstract ServiceComponent serviceComponent(GrpcCallMetadataModule metadataModule);
 
     @Component.Builder
     interface Builder {
+
       Builder nettyServerModule(NettyServerModule module);
 
       @BindsInstance
@@ -111,6 +119,7 @@ public class ServerApp {
         KvStoreInterceptorModule.class
     })
     interface ServiceComponent extends KvStoreImplServiceDefinition {
+
     }
 
     @Module

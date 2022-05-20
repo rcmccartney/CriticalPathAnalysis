@@ -24,11 +24,12 @@ import static org.junit.Assert.assertEquals;
  * Unit tests for {@link TopLevelServer}.
  *
  * <p>Note: directExecutor() makes it easier to have deterministic tests.
- * However, if your implementation uses another thread and uses streaming it is better to use
- * the default executor, to avoid hitting bug #3084.
+ * However, if your implementation uses another thread and uses streaming it is better to use the
+ * default executor, to avoid hitting bug #3084.
  */
 @RunWith(JUnit4.class)
 public class KvStoreImplTest {
+
   /**
    * This rule manages automatic graceful shutdown for the registered servers and channels at the
    * end of test.
@@ -61,11 +62,13 @@ public class KvStoreImplTest {
         InProcessChannelBuilder.forName(bServerName).directExecutor().build());
     BGrpc.BFutureStub bStub = BGrpc.newFutureStub(channel);
     grpcCleanup.register(InProcessServerBuilder
-        .forName(topServerName).directExecutor().addService(new KvStoreImpl(calls, cache, bStub, cStub)).build().start());
+        .forName(topServerName).directExecutor()
+        .addService(new KvStoreImpl(calls, cache, bStub, cStub)).build().start());
 
     KvStoreBlockingStub blockingStub = KvStoreGrpc.newBlockingStub(
         // Create a client channel and register for automatic graceful shutdown.
-        grpcCleanup.register(InProcessChannelBuilder.forName(topServerName).directExecutor().build()));
+        grpcCleanup.register(
+            InProcessChannelBuilder.forName(topServerName).directExecutor().build()));
 
     GetReply getReply =
         blockingStub.get(GetRequest.newBuilder().setKey("missing key").build());

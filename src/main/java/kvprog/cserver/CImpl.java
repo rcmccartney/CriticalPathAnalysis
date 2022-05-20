@@ -4,11 +4,14 @@ import dagger.grpc.server.GrpcService;
 import io.grpc.stub.StreamObserver;
 import io.perfmark.PerfMark;
 import io.perfmark.TaskCloseable;
-import kvprog.*;
-import kvprog.CGrpc.CImplBase;
-
-import javax.inject.Inject;
 import java.util.concurrent.ExecutionException;
+import javax.inject.Inject;
+import kvprog.C1Reply;
+import kvprog.C1Request;
+import kvprog.C2Reply;
+import kvprog.C2Request;
+import kvprog.CGrpc;
+import kvprog.CGrpc.CImplBase;
 
 @GrpcService(grpcClass = CGrpc.class)
 public class CImpl extends CImplBase {
@@ -35,7 +38,7 @@ public class CImpl extends CImplBase {
   public void c2(C2Request req, StreamObserver<C2Reply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("C2")) {
       ServerProducerGraph producers = ServerProducerGraph
-          .builder().setC2Request(req).build();
+          .builder().setC1Request(C1Request.getDefaultInstance()).setC2Request(req).build();
       try {
         responseObserver.onNext(producers.c2().get());
       } catch (InterruptedException | ExecutionException e) {

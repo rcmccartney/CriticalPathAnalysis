@@ -24,9 +24,9 @@ public class LoadGenerator {
   }
 
   public void put(String key, String value) {
-    logger.info("Will try to put " + key + " to value " + value + "  10 times.");
+    logger.info("Will try to put " + key + " to value " + value + ".");
     ClientProducerGraph producers = ClientProducerGraph
-        .builder().setStub(stub).setKey(key).setValue(value).setCount(10).build();
+        .builder().setStub(stub).setKey(key).setValue(value).build();
     try {
       logger.info(producers.sendPut().get());
     } catch (InterruptedException | ExecutionException e) {
@@ -36,9 +36,9 @@ public class LoadGenerator {
   }
 
   public void get(String key) {
-    logger.info("Will try to get " + key + " 10 times.");
+    logger.info("Will try to get " + key + ".");
     ClientProducerGraph producers = ClientProducerGraph
-        .builder().setStub(stub).setKey(key).setCount(10).build();
+        .builder().setStub(stub).setKey(key).build();
     try {
       logger.info(producers.sendGet().get());
     } catch (InterruptedException | ExecutionException e) {

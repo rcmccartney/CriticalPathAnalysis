@@ -21,7 +21,7 @@ message PutRequest {
 
 message PutReply {
   enum Status {
-    SUCCESS = 0;	 // Operation succeeded
+    SUCCESS = 0;   // Operation succeeded
     NOTFOUND = 1;  // Key was not found
     SYSTEMERR = 2; // Some kind of system error occurred
   };
@@ -35,7 +35,7 @@ message GetRequest {
 
 message GetReply {
   enum Status {
-    NOTFOUND = 0;	 // Key was not found
+    NOTFOUND = 0;   // Key was not found
     SYSTEMERR = 1; // Some kind of system error occurred
   };
 

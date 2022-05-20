@@ -1,12 +1,18 @@
 package kvprog.bserver;
 
+import dagger.BindsInstance;
+import dagger.Component;
 import dagger.Module;
-import dagger.*;
+import dagger.Provides;
+import dagger.Subcomponent;
 import dagger.grpc.server.CallScoped;
 import dagger.grpc.server.ForGrpcService;
 import dagger.grpc.server.GrpcCallMetadataModule;
 import dagger.grpc.server.NettyServerModule;
 import io.grpc.ServerInterceptor;
+import java.util.Arrays;
+import java.util.List;
+import javax.inject.Singleton;
 import kvprog.BGrpc;
 import kvprog.common.InterceptorModule;
 import kvprog.common.RpcInterceptor;
@@ -14,10 +20,6 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.OptionHandlerFilter;
-
-import javax.inject.Singleton;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * The main app responsible for running the server.
@@ -74,7 +76,8 @@ public class ServerApp {
   }
 
   @Singleton
-  @Component(modules = {NettyServerModule.class, BComponentModule.class, InterceptorModule.class, BackendModule.class})
+  @Component(modules = {NettyServerModule.class, BComponentModule.class, InterceptorModule.class,
+      BackendModule.class})
   static abstract class ServerComponent {
 
     abstract BServer server();
@@ -83,6 +86,7 @@ public class ServerApp {
 
     @Component.Builder
     interface Builder {
+
       Builder nettyServerModule(NettyServerModule module);
 
       @BindsInstance
@@ -101,6 +105,7 @@ public class ServerApp {
         BInterceptorModule.class
     })
     interface ServiceComponent extends BImplServiceDefinition {
+
     }
 
     @Module

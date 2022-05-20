@@ -11,9 +11,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
-
-import kvprog.*;
+import kvprog.BGrpc;
+import kvprog.CGrpc;
+import kvprog.CallInfo;
+import kvprog.CallsReply;
+import kvprog.CallsRequest;
+import kvprog.GetReply;
+import kvprog.GetRequest;
+import kvprog.KvStoreGrpc;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
+import kvprog.PutReply;
+import kvprog.PutRequest;
 import kvprog.common.InterceptorModule.CallMetadata;
 import kvprog.toplevelserver.TopComponentModule.Cache;
 
@@ -41,7 +49,9 @@ class KvStoreImpl extends KvStoreImplBase {
   public void put(PutRequest req, StreamObserver<PutReply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("Put")) {
       ServerProducerGraph producers = ServerProducerGraph
-          .builder().setPutRequest(req).setCache(cache).build();
+          .builder().setBStub(bstub).setCStub(cstub).setPutRequest(req)
+          .setGetRequest(GetRequest.newBuilder().setKey(req.getKey()).build()).setCache(cache)
+          .build();
       try {
         responseObserver.onNext(producers.put().get());
       } catch (InterruptedException | ExecutionException e) {
@@ -60,7 +70,7 @@ class KvStoreImpl extends KvStoreImplBase {
   public void get(GetRequest req, StreamObserver<GetReply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("Get")) {
       ServerProducerGraph producers = ServerProducerGraph
-          .builder().setGetRequest(req).setCache(cache).build();
+          .builder().setBStub(bstub).setCStub(cstub).setGetRequest(req).setCache(cache).build();
       try {
         responseObserver.onNext(producers.get().get());
       } catch (InterruptedException | ExecutionException e) {

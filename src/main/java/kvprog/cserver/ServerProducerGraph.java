@@ -6,7 +6,6 @@ import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
 import javax.inject.Singleton;
-
 import kvprog.C1Reply;
 import kvprog.C1Request;
 import kvprog.C2Reply;
@@ -44,7 +43,7 @@ interface ServerProducerGraph {
     }
 
     @Produces
-    static C2Reply c2(C2Request request) {
+    static C2Reply c2(C1Reply c1Reply, C2Request c2Request) {
       return C2Reply.getDefaultInstance();
     }
   }
