@@ -86,33 +86,25 @@ public class LoadGeneratorTest {
         .forName(serverName).directExecutor().addService(serviceImpl).build().start());
 
     // Create a client channel and register for automatic graceful shutdown.
-    ManagedChannel channel = grpcCleanup.register(
-        InProcessChannelBuilder.forName(serverName).directExecutor().build());
+    ManagedChannel channel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
 
     // Create a HelloWorldClient using the in-process channel;
-    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel),
-        ConcurrentHashMultiset.create());
+    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel), ConcurrentHashMultiset.create());
   }
 
   @Test
   public void get_reachesService() {
     ArgumentCaptor<GetRequest> requestCaptor = ArgumentCaptor.forClass(GetRequest.class);
-
     loadGen.get("missing key");
-
-    verify(serviceImpl, times(1))
-        .get(requestCaptor.capture(), ArgumentMatchers.any());
+    verify(serviceImpl, times(1)).get(requestCaptor.capture(), ArgumentMatchers.any());
     assertEquals("missing key", requestCaptor.getValue().getKey());
   }
 
   @Test
   public void put_reachesService() {
     ArgumentCaptor<PutRequest> requestCaptor = ArgumentCaptor.forClass(PutRequest.class);
-
     loadGen.put("100", "100");
-
-    verify(serviceImpl, times(1))
-        .put(requestCaptor.capture(), ArgumentMatchers.any());
+    verify(serviceImpl, times(1)).put(requestCaptor.capture(), ArgumentMatchers.any());
     assertEquals("100", requestCaptor.getValue().getKey());
   }
 }

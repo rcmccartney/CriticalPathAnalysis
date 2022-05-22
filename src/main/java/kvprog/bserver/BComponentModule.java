@@ -9,7 +9,8 @@ import kvprog.bserver.ServerApp.ServerComponent;
 class BComponentModule {
 
   @Provides
-  static BImplServiceDefinition.Factory provideServiceFactor(final ServerComponent component) {
+  static BImplServiceDefinition.Factory provideServiceFactor(
+      final ServerComponent component) {
     return new BImplServiceDefinition.Factory() {
       @Override
       public BImplServiceDefinition grpcService(
