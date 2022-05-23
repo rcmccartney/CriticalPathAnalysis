@@ -50,9 +50,34 @@ message CallsRequest {
 
 message CallsReply {
   repeated CallInfo call_info = 1;
+  // Each RPC & Producer Node contributes a path element, which includes a name & duration.
+  // TODO: This currently is the full execution graph, but we may only want a single Critical Path
+  // which can be modeled linearly.
+  repeated PathElement path_element = 2;
 }
 
 message CallInfo {
   string call_type = 1;
   int64 count = 2;
+}
+
+// An element of the critical path.
+// For example:
+// @Produces
+// ListenableFuture<Out> produceOut() {
+//   Request request = generateRequest();
+//   return getOutService.send(request);
+// }
+// produceOut# will be one PathElement, with a sub_element of getOutService.
+// The duration of this element will be the generateRequest# computation, and
+// the latency of the RPC call will show up in the sub_element.
+message PathElement {
+  // Name of this PathElement.
+  optional string id = 3;
+
+  // Duration of this PathElement, in micros.
+  optional int64 duration_micros = 1;
+
+  // Child elements on the path.
+  repeated PathElement sub_elements = 2;
 }
