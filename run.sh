@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Cleanup anything left from earlier runs.
+kill $(ps aux | grep '[/]usr/bin/java'  | awk '{print $2}')
+kill $(ps aux | grep '[h]ttp.server 8081'  | awk '{print $2}')
+
 echo "************************"
 echo "* Build & test"
 echo "************************"
@@ -14,12 +18,14 @@ pushd frontend
 cp ../main/proto/kvprog.proto ./
 protoc -I=. kvprog.proto \
   --js_out=import_style=commonjs:. \
-  --grpc-web_out=import_style=commonjs,mode=grpcwebtext:.
+  --grpc-web_out=import_style=commonjs,mode=grpcwebtext:. || { echo 'Build failed!' ; exit 1; }
 rm kvprog.proto
-npm install
-npx webpack client.js
+npm install || { echo 'Build failed!' ; exit 1; }
+npx webpack client.js || { echo 'Build failed!' ; exit 1; }
 popd
 popd
+sleep 1
+read -p "Press enter to continue"
 
 echo "************************"
 echo "* Run top level server"
@@ -27,7 +33,6 @@ echo "************************"
 ./build/install/mygrpc/bin/top-level-server &
 topServerPID=$!
 sleep 1
-read -p "Press enter to continue"
 
 echo "************************"
 echo "* Run B server"
@@ -35,7 +40,6 @@ echo "************************"
 ./build/install/mygrpc/bin/b-server &
 bServerPID=$!
 sleep 1
-read -p "Press enter to continue"
 
 echo "************************"
 echo "* Run C server"
@@ -43,7 +47,6 @@ echo "************************"
 ./build/install/mygrpc/bin/c-server &
 cServerPID=$!
 sleep 1
-read -p "Press enter to continue"
 
 echo "************************"
 echo "* Run proxy & frontend"
@@ -66,7 +69,7 @@ echo "*****************"
 ./build/install/mygrpc/bin/client 100 &
 ./build/install/mygrpc/bin/client -c &
 sleep 5
-read -p "Press enter to continue"
+read -p "Press enter to quit"
 
 echo "*****************"
 echo "* Ending servers"
