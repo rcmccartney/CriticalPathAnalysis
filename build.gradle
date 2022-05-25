@@ -97,7 +97,8 @@ protobuf {
 }
 
 scabbard {
-    enabled true
+    // enable to get graphs of dependencies - will be slow.
+    enabled false
     outputFormat "svg"
 }
 

@@ -32,7 +32,6 @@ public class LoadGenerator {
     } catch (InterruptedException | ExecutionException e) {
       e.printStackTrace();
     }
-    callData();
   }
 
   public void get(String key) {
@@ -44,7 +43,6 @@ public class LoadGenerator {
     } catch (InterruptedException | ExecutionException e) {
       e.printStackTrace();
     }
-    callData();
   }
 
   public void callData() {

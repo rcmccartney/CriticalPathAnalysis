@@ -1,6 +1,7 @@
 package kvprog.common;
 
 import com.google.common.collect.ImmutableList;
+import dagger.grpc.server.CallScoped;
 import dagger.producers.monitoring.ProducerMonitor;
 import dagger.producers.monitoring.ProducerToken;
 import dagger.producers.monitoring.ProductionComponentMonitor;
@@ -11,7 +12,7 @@ import javax.inject.Inject;
  * execution. This can be used to establish computational dependencies between producers execution
  * order as an implicit dependency.
  */
-final class ProductionExecutionComponentMonitor extends ProductionComponentMonitor {
+public final class ProductionExecutionComponentMonitor extends ProductionComponentMonitor {
 
   private final ImmutableList.Builder<GraphProducerToken> producers;
   private final String componentName;
@@ -27,7 +28,8 @@ final class ProductionExecutionComponentMonitor extends ProductionComponentMonit
     return new ProductionExecutionProducerMonitor(producers, componentName, token);
   }
 
-  static final class Factory extends ProductionComponentMonitor.Factory {
+  @CallScoped
+  public static final class Factory extends ProductionComponentMonitor.Factory {
 
     private final ImmutableList.Builder<GraphProducerToken> producers;
     private final Names componentNames;
