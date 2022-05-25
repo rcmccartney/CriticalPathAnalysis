@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = "1.8"
+targetCompatibility = "1.8"
+
+repositories {
+    mavenCentral()
+}
+
+def autoServiceVersion = '1.0.1'
+def daggerVersion = '2.41'
+
+dependencies {
+    implementation "com.google.dagger:dagger:${daggerVersion}"
+    annotationProcessor "com.google.dagger:dagger-compiler:${daggerVersion}"
+
+    implementation "com.google.auto.service:auto-service-annotations:${autoServiceVersion}"
+    annotationProcessor "com.google.auto.service:auto-service:${autoServiceVersion}"
+    compileOnly "com.google.auto.service:auto-service:${autoServiceVersion}"
+    implementation "com.google.dagger:dagger-spi:${daggerVersion}"
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "com.github.kittinunf.result" && requested.name == "result" && requested.version == "3.0.0") {
+            useVersion("3.0.1")
+            because("Transitive dependency of Scabbard, currently not available on mavenCentral()")
+        }
+    }
+}

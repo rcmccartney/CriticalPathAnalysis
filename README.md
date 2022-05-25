@@ -45,6 +45,8 @@ so there are significantly more dependencies:
 * [python3](https://www.python.org/downloads/)
 * On Mac: [Command Line Tools package](https://apple.stackexchange.com/questions/254380/why-am-i-getting-an-invalid-active-developer-path-when-attempting-to-use-git-a)
 * Optional: [gRPC-Web Dev Tools](https://github.com/SafetyCulture/grpc-web-devtools)
+* Optional: [Scabbard](https://arunkumar9t2.github.io/scabbard/) has a dependency on graphviz
+if you want to generate `png`'s of the component graphs.
 
 Once all dependencies are installed, use the following script:
 

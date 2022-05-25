@@ -28,7 +28,7 @@ apply plugin: 'java'
 
 compileJava {
     // This only works when forking and passing 'javac' as an executable
-    options.compilerArgs << '-Adagger.floatingBindsMethods=enabled'
+    options.compilerArgs << '-Adagger.fullBindingGraphValidation=ERROR'
 }
 
 
@@ -39,6 +39,7 @@ targetCompatibility = 1.8
 // are looking at a tagged version of the example and not "master"!
 
 def argsVersion = '2.33'
+def autoServiceVersion = '1.0.1'
 def autoValueVersion = '1.9'
 def daggerVersion = '2.41'
 def grpcVersion = '1.45.0'
@@ -56,6 +57,10 @@ dependencies {
 
     implementation "com.google.dagger:dagger:${daggerVersion}"
     annotationProcessor "com.google.dagger:dagger-compiler:${daggerVersion}"
+
+    // This is used for dagger spi.
+    annotationProcessor project(':AnnotationProcessor')
+    compileOnly project(':AnnotationProcessor')
 
     implementation "com.google.dagger:dagger-producers:${daggerVersion}"
 
