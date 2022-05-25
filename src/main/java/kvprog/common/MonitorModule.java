@@ -11,7 +11,14 @@ public class MonitorModule {
   @Provides
   @IntoSet
   static ProductionComponentMonitor.Factory traceContextComponentMonitorFactory(
-      ThreadLocalComponentMonitor.Factory monitorFactory) {
-    return monitorFactory;
+      ThreadLocalComponentMonitor.Factory factory) {
+    return factory;
+  }
+
+  @Provides
+  @IntoSet
+  static ProductionComponentMonitor.Factory productionExecutionRecorderFactory(
+      ProductionExecutionComponentMonitor.Factory factory) {
+    return factory;
   }
 }
