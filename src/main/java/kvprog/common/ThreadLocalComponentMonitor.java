@@ -48,12 +48,12 @@ final class ThreadLocalComponentMonitor extends ProductionComponentMonitor {
 
     @Override
     public void methodStarting() {
-      System.err.println("methodStarting: " + token);
+      // System.err.println("methodStarting: " + token);
     }
 
     @Override
     public void methodFinished() {
-      System.err.println("methodFinished: " + token);
+      // System.err.println("methodFinished: " + token);
     }
   }
 }

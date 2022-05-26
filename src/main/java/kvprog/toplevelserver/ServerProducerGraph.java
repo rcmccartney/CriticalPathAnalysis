@@ -6,8 +6,8 @@ import dagger.grpc.server.CallScoped;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
-
 import java.util.HashMap;
+import javax.inject.Provider;
 import kvprog.BGrpc;
 import kvprog.CGrpc;
 import kvprog.GetReply;
@@ -15,11 +15,9 @@ import kvprog.GetRequest;
 import kvprog.PutReply;
 import kvprog.PutReply.Status;
 import kvprog.PutRequest;
+import kvprog.common.CriticalPathComponentMonitor;
 import kvprog.common.ExecutorModule;
 import kvprog.common.MonitorModule;
-import kvprog.common.ProductionExecutionComponentMonitor;
-
-import javax.inject.Provider;
 
 @CallScoped
 @ProductionComponent(
@@ -48,7 +46,8 @@ interface ServerProducerGraph {
   class ServerProducerModule {
 
     @Produces
-    static PutReply put(Provider<ProductionExecutionComponentMonitor.Factory> factory, PutRequest request, GetReply getReply, HashMap<String, String> cache) {
+    static PutReply put(Provider<CriticalPathComponentMonitor.Factory> factory, PutRequest request,
+        GetReply getReply, HashMap<String, String> cache) {
       PutReply reply;
       if (request.getKey().length() > 64 || request.getValue().length() > 512) {
         reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
@@ -56,7 +55,7 @@ interface ServerProducerGraph {
         cache.put(request.getKey(), request.getValue());
         reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
       }
-      System.err.println("Order: " + factory.get().getExecutionOrder());
+      System.err.println("Critical path: " + factory.get().criticalPath());
       return reply;
     }
 

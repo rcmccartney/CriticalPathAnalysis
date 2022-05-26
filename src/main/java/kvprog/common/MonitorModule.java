@@ -17,8 +17,15 @@ public class MonitorModule {
 
   @Provides
   @IntoSet
-  static ProductionComponentMonitor.Factory productionExecutionRecorderFactory(
+  static ProductionComponentMonitor.Factory productionExecutionComponentMonitorFactory(
       ProductionExecutionComponentMonitor.Factory factory) {
+    return factory;
+  }
+
+  @Provides
+  @IntoSet
+  static ProductionComponentMonitor.Factory criticalPathComponentMonitorFactory(
+      CriticalPathComponentMonitor.Factory factory) {
     return factory;
   }
 }

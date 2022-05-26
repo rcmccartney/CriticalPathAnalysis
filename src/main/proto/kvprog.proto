@@ -81,3 +81,16 @@ message PathElement {
   // Child elements on the path.
   repeated PathElement sub_elements = 2;
 }
+
+message CostElement {
+  // This should be a specific path to the location the cost was incurred.
+  // Examples include a path in the producer graph log or the RPCStats tree.
+  optional string source = 1;
+  // How much time was consumed by this entry.
+  optional double cost_sec = 2;
+}
+
+// An ordered sequence of cost items.
+message CostList {
+  repeated CostElement element = 1;
+}
