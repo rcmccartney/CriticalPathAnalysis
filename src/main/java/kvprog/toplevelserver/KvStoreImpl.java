@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
-import javax.inject.Provider;
 import kvprog.BGrpc;
 import kvprog.CGrpc;
 import kvprog.CallInfo;
@@ -23,7 +22,6 @@ import kvprog.KvStoreGrpc;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
 import kvprog.PutReply;
 import kvprog.PutRequest;
-import kvprog.common.CriticalPathComponentMonitor;
 import kvprog.common.InterceptorModule.CallMetadata;
 import kvprog.toplevelserver.TopComponentModule.Cache;
 
@@ -34,20 +32,17 @@ class KvStoreImpl extends KvStoreImplBase {
   private final HashMap<String, String> cache;
   private final BGrpc.BFutureStub bstub;
   private final CGrpc.CFutureStub cstub;
-  private final Provider<CriticalPathComponentMonitor.Factory> factory;
 
   @Inject
   KvStoreImpl(
       @CallMetadata Multiset<String> calls,
       @Cache HashMap<String, String> cache,
       BGrpc.BFutureStub bstub,
-      CGrpc.CFutureStub cstub,
-      Provider<CriticalPathComponentMonitor.Factory> factory) {
+      CGrpc.CFutureStub cstub) {
     this.calls = calls;
     this.cache = cache;
     this.bstub = bstub;
     this.cstub = cstub;
-    this.factory = factory;
   }
 
   @Override
@@ -69,8 +64,6 @@ class KvStoreImpl extends KvStoreImplBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
-
-    System.err.println("Critical path from RPC: " + factory.get().criticalPath());
   }
 
   @Override

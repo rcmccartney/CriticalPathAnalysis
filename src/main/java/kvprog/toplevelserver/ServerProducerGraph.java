@@ -1,14 +1,28 @@
 package kvprog.toplevelserver;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import dagger.grpc.server.CallScoped;
+import dagger.producers.Producer;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
 import javax.inject.Provider;
+import javax.inject.Qualifier;
+import kvprog.B1Reply;
+import kvprog.B1Request;
+import kvprog.B2Reply;
+import kvprog.B2Request;
 import kvprog.BGrpc;
+import kvprog.C1Reply;
+import kvprog.C1Request;
+import kvprog.C2Reply;
+import kvprog.C2Request;
 import kvprog.CGrpc;
 import kvprog.GetReply;
 import kvprog.GetRequest;
@@ -42,12 +56,22 @@ interface ServerProducerGraph {
 
   ListenableFuture<PutReply> put();
 
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface Conditional {
+
+  }
+
   @ProducerModule
   class ServerProducerModule {
 
     @Produces
     static PutReply put(Provider<CriticalPathComponentMonitor.Factory> factory, PutRequest request,
-        GetReply getReply, HashMap<String, String> cache) {
+        B1Reply b1Reply,
+        @Conditional GetReply getReply,
+        HashMap<String, String> cache) {
+      System.err.println("In Put");
       PutReply reply;
       if (request.getKey().length() > 64 || request.getValue().length() > 512) {
         reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
@@ -55,12 +79,35 @@ interface ServerProducerGraph {
         cache.put(request.getKey(), request.getValue());
         reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
       }
-      System.err.println("Critical path: " + factory.get().criticalPath());
+      System.err.println("Critical path `PUT`: " + factory.get().criticalPath());
       return reply;
     }
 
     @Produces
-    static GetReply get(GetRequest request, HashMap<String, String> cache) {
+    @Conditional
+    static ListenableFuture<GetReply> internalPut(PutRequest request, Producer<GetReply> getReply) {
+      if (request.getKey().equals("queryOfDeath")) {
+        System.err.println("Found slow query!");
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        return getReply.get();
+      } else {
+        return Futures.immediateFuture(GetReply.getDefaultInstance());
+      }
+    }
+
+    @Produces
+    static GetReply get(Provider<CriticalPathComponentMonitor.Factory> factory,
+        GetRequest request,
+        HashMap<String, String> cache,
+        // TODO: make this conditional.
+        B2Reply b2Reply,
+        C1Reply c1Reply,
+        C2Reply c2Reply) {
+      System.err.println("In Get");
       GetReply reply;
       if (request.getKey().length() > 64) {
         reply = GetReply.newBuilder().setFailure(GetReply.Status.SYSTEMERR).build();
@@ -69,7 +116,28 @@ interface ServerProducerGraph {
       } else {
         reply = GetReply.newBuilder().setValue(cache.get(request.getKey())).build();
       }
+      System.err.println("Critical path `GET`: " + factory.get().criticalPath());
       return reply;
+    }
+
+    @Produces
+    static ListenableFuture<B1Reply> callB1(BGrpc.BFutureStub stub, PutRequest request) {
+      return stub.b1(B1Request.getDefaultInstance());
+    }
+
+    @Produces
+    static ListenableFuture<B2Reply> callB2(BGrpc.BFutureStub stub, GetRequest request) {
+      return stub.b2(B2Request.getDefaultInstance());
+    }
+
+    @Produces
+    static ListenableFuture<C1Reply> callC1(CGrpc.CFutureStub stub, GetRequest request) {
+      return stub.c1(C1Request.getDefaultInstance());
+    }
+
+    @Produces
+    static ListenableFuture<C2Reply> callC2(CGrpc.CFutureStub stub, GetRequest request) {
+      return stub.c2(C2Request.getDefaultInstance());
     }
   }
 

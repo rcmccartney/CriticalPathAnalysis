@@ -39,11 +39,13 @@ interface ServerProducerGraph {
 
     @Produces
     static C1Reply c1(C1Request request) {
+      System.err.println("In C1");
       return C1Reply.getDefaultInstance();
     }
 
     @Produces
     static C2Reply c2(C1Reply c1Reply, C2Request c2Request) {
+      System.err.println("In C2");
       return C2Reply.getDefaultInstance();
     }
   }

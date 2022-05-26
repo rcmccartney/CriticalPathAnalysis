@@ -42,13 +42,13 @@ interface ServerProducerGraph {
 
     @Produces
     static B1Reply b1(B1Request request, B2Reply reply) {
-      System.err.println("In B1: B2Reply = " + reply);
+      System.err.println("In B1");
       return B1Reply.getDefaultInstance();
     }
 
     @Produces
     static B2Reply b2(C1Reply c1Reply) {
-      System.err.println("In B2: C1Reply = " + c1Reply);
+      System.err.println("In B2");
       return B2Reply.getDefaultInstance();
     }
 
