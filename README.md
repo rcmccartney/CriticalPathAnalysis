@@ -1,10 +1,21 @@
 # Implementing Critical Path Tracing: A Practitioner’s Approach
 
-Distributed Latency Profiling through Critical Path Tracing using Dagger Framework.
+Our project implements a distributed profiler that can be used to trace critical path in distributed applications build using the [Dagger Producers](https://dagger.dev/dev-guide/producers.html) framework. The project consists of the following major components -
+
+### 1. Top level server
+ Top lever server consists of two subcomponents - put and get. Put and get subcomponents conditionally call other service subcomponents.
+### 2. Server B and Server C
+Server B and Server C both have two subcomponents - b1, b2 and c1, c2 respectively. Differnt latency for each subcomponent is simulated by sleeping the corresponding thread. Further, each subcomponent may conditionally call other subcomponents depending on the call type.
+### 4. Common
+This module consists of implements RPC interceptor to collect latency information and also computes critical path.
+### 5. Client / Load Generator
+The client or the load generator is used to make calls to the top level service. Further, I also collects the RPC data corresponding to different subcomponent which consists of the call graph and the latencies corresponding to each subcomponent call.
+### 6. Frontend
+Frontend is build using javascript. It uses D3 data visualization library to display the graph of the distributed services and the critical path for each of the top level call type.
 
 ## Usage
 
-# Command-line usage
+### Command-line usage
 
 You must already have the JDK installed to run. To install all other dependencies, including gRPC:
 
@@ -54,7 +65,15 @@ Once all dependencies are installed, use the following script:
 $ ./run
 ```
 
-## References
-Critical Path Tracing: https://queue.acm.org/detail.cfm?id=3526967
-Dagger Framework: https://dagger.dev/
 
+## References
+
+* [Distributed Latency Profiling through Critical Path Tracing](https://queue.acm.org/detail.cfm?id=3526967#:~:text=Critical%20path%20tracing%20(CPT)%20is,day%20data%20for%20latency%20analysis.)
+
+* [Dagger](https://dagger.dev/dev-guide/)
+
+* [Protocol Buffers](https://developers.google.com/protocol-buffers)
+
+* [gRPC](https://github.com/grpc/grpc-java)
+
+* [D3.js](https://d3js.org/)
