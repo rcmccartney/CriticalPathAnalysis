@@ -8,7 +8,11 @@ import dagger.multibindings.ElementsIntoSet;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
-import kvprog.*;
+import kvprog.GetReply;
+import kvprog.GetRequest;
+import kvprog.KvStoreGrpc;
+import kvprog.PutReply;
+import kvprog.PutRequest;
 import kvprog.common.ExecutorModule;
 
 import javax.inject.Qualifier;

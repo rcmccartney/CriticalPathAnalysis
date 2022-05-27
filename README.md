@@ -1,10 +1,10 @@
-# mygrpc
+# Implementing Critical Path Tracing: A Practitioner’s Approach
 
-Simple grpc example code to showcase gradle build chain with grpc & protos.
+Distributed Latency Profiling through Critical Path Tracing using Dagger Framework.
 
 ## Usage
 
-### Command-line usage
+# Command-line usage
 
 You must already have the JDK installed to run. To install all other dependencies, including gRPC:
 
@@ -53,3 +53,8 @@ Once all dependencies are installed, use the following script:
 ```
 $ ./run
 ```
+
+## References
+Critical Path Tracing: https://queue.acm.org/detail.cfm?id=3526967
+Dagger Framework: https://dagger.dev/
+
