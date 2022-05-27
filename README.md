@@ -53,3 +53,6 @@ Once all dependencies are installed, use the following script:
 ```
 $ ./run
 ```
+
+## References
+https://queue.acm.org/detail.cfm?id=3526967
