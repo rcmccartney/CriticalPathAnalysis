@@ -73,9 +73,6 @@ sleep 2
 read -p "Press enter to continue"
 ./build/install/mygrpc/bin/client 100 &
 sleep 2
-read -p "Press enter to continue"
-./build/install/mygrpc/bin/client -c &
-sleep 2
 read -p "Press enter to quit"
 
 echo "*****************"

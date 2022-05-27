@@ -1,24 +1,14 @@
 package kvprog.client;
 
-import com.google.common.collect.Multiset;
-import io.grpc.CallOptions;
-import io.grpc.Channel;
-import io.grpc.ClientCall;
-import io.grpc.ClientInterceptor;
-import io.grpc.ForwardingClientCall;
-import io.grpc.ForwardingClientCallListener;
-import io.grpc.Metadata;
+import io.grpc.*;
 import io.grpc.Metadata.Key;
-import io.grpc.MethodDescriptor;
+
 import javax.inject.Inject;
 
 public class RpcInterceptorOutput implements ClientInterceptor {
 
-  private final Multiset<String> calls;
-
   @Inject
-  RpcInterceptorOutput(@ClientModule.CallMetadata Multiset<String> calls) {
-    this.calls = calls;
+  RpcInterceptorOutput() {
   }
 
   public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
@@ -32,7 +22,7 @@ public class RpcInterceptorOutput implements ClientInterceptor {
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
-            calls.add(responseHeader.get(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER)));
+            System.err.println("Client sees: " + responseHeader.get(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER)));
             super.onHeaders(responseHeader);
           }
         }, requestHeader);

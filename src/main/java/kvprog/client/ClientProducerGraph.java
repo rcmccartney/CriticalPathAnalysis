@@ -8,23 +8,17 @@ import dagger.multibindings.ElementsIntoSet;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
+import kvprog.*;
+import kvprog.common.ExecutorModule;
+
+import javax.inject.Qualifier;
+import javax.inject.Singleton;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
-import kvprog.CallInfo;
-import kvprog.CallsReply;
-import kvprog.CallsRequest;
-import kvprog.GetReply;
-import kvprog.GetRequest;
-import kvprog.KvStoreGrpc;
-import kvprog.PutReply;
-import kvprog.PutRequest;
-import kvprog.common.ExecutorModule;
 
 @Singleton
 @ProductionComponent(
@@ -47,9 +41,6 @@ interface ClientProducerGraph {
 
   @ClientProducerModule.Put
   ListenableFuture<String> sendPut();
-
-  @ClientProducerModule.CallData
-  ListenableFuture<String> callData();
 
   @ProducerModule
   class ClientProducerModule {
@@ -99,22 +90,6 @@ interface ClientProducerGraph {
       return Joiner.on("\n").join(vals);
     }
 
-    @Produces
-    static ListenableFuture<CallsReply> calls(KvStoreGrpc.KvStoreFutureStub stub) {
-      return stub.calls(CallsRequest.getDefaultInstance());
-    }
-
-    @Produces
-    @CallData
-    static String sendCalls(CallsReply response) {
-      String result;
-      result = "** Call Type : Count **\n";
-      for (CallInfo info : response.getCallInfoList()) {
-        result += String.format("%s : %s\n", info.getCallType(), info.getCount());
-      }
-      return result;
-    }
-
     @Qualifier
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
@@ -126,13 +101,6 @@ interface ClientProducerGraph {
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @interface Put {
-
-    }
-
-    @Qualifier
-    @Documented
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface CallData {
 
     }
   }

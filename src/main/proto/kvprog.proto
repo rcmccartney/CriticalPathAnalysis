@@ -49,16 +49,11 @@ message CallsRequest {
 }
 
 message CallsReply {
-  repeated CallInfo call_info = 1;
+  repeated CostList cost_list = 1;
   // Each RPC & Producer Node contributes a path element, which includes a name & duration.
   // TODO: This currently is the full execution graph, but we may only want a single Critical Path
   // which can be modeled linearly.
   repeated PathElement path_element = 2;
-}
-
-message CallInfo {
-  string call_type = 1;
-  int64 count = 2;
 }
 
 // An element of the critical path.

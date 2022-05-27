@@ -28,9 +28,6 @@ public class ClientApp {
   @Option(name = "-p", usage = "port number of server", metaVar = "PORT")
   private String port = "9090";
 
-  @Option(name = "-c", usage = "get call metadata from server")
-  private boolean calls;
-
   @Argument
   private List<String> arguments = new ArrayList<String>();
 
@@ -48,8 +45,7 @@ public class ClientApp {
       System.exit(1);
     }
 
-    if (app.help || (!app.calls && app.arguments.size() == 0) || app.arguments.size() > 2
-        || (app.calls && app.arguments.size() != 0)) {
+    if (app.help || app.arguments.size() == 0 || app.arguments.size() > 2) {
       printHelp(parser);
       return;
     }
@@ -59,9 +55,7 @@ public class ClientApp {
     LoadGenerator loadGen = client.loadGen();
 
     try {
-      if (app.calls) {
-        loadGen.callData();
-      } else if (app.arguments.size() == 1) {
+      if (app.arguments.size() == 1) {
         loadGen.get(app.arguments.get(0));
       } else {
         loadGen.put(app.arguments.get(0), app.arguments.get(1));

@@ -89,7 +89,7 @@ public class LoadGeneratorTest {
     ManagedChannel channel = grpcCleanup.register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
 
     // Create a client using the in-process channel;
-    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel), ConcurrentHashMultiset.create());
+    loadGen = new LoadGenerator(KvStoreGrpc.newFutureStub(channel));
   }
 
   @Test
