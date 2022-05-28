@@ -13,11 +13,9 @@ enableDevTools([
 function getCostList() {
     return new Promise(resolve => {
         client.calls(request, {}, (err, response) => {
-            setTimeout(() => {
                 resolve(response.getCostListList());
-            }, 2000);
+            });
         });
-    });
 }
 
 let data = [31, 42, 56, 92, 84, 72, 53, 43, 29, 24, 64, 49];
@@ -57,7 +55,9 @@ function display (result) {
 
 async function f1() {
     var x = await getCostList();
-    console.log(x); // 10
+    console.log(x);
+    // call display with response to show graph
+    display(x);
 }
 
 f1();
