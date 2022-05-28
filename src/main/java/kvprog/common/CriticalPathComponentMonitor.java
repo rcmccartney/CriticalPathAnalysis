@@ -14,19 +14,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import kvprog.CostList;
+import kvprog.client.LoadGenerator;
 
 /**
  * A monitor that calculates the critical path of execution.
  */
 public final class CriticalPathComponentMonitor extends ProductionComponentMonitor {
+  private static final Logger logger = Logger.getLogger(LoadGenerator.class.getName());
 
-  // Records the producer that's currently running on the current thread.
-  private static final ThreadLocal<ProducerToken> activeProducer = new ThreadLocal<>();
   private final String componentName;
   private final Ticker ticker;
+
+  // ProducerToken is a generated name for the Producer,
+  //     e.g. kvprog.toplevelserver.ServerProducerGraph_ServerProducerModule_PutFactory.
+  // We create one CriticalPathProducerMonitor per token.
   private final Map<ProducerToken, CriticalPathProducerMonitor> producerMonitors = new HashMap<>();
 
   CriticalPathComponentMonitor(String componentName, Ticker ticker) {
@@ -112,6 +117,9 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      * </ol>
      */
     public synchronized CriticalPath criticalPath() {
+      System.err.println("statsMonitors");
+      statsMonitors.keySet().forEach(System.err::println);
+      statsMonitors.values().forEach(System.err::println);
       if (statsMonitors.isEmpty()) {
         return CriticalPath.empty();
       }
@@ -289,112 +297,83 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
     }
   }
 
+  /**
+   * One {@link CriticalPathProducerMonitor} exists per node in the Producer graph (generally a
+   * function annotated `@Produces`).
+   */
   final class CriticalPathProducerMonitor extends ProducerMonitor {
-
+    // Unique ID for this ProducerMonitor.
     private final ProducerToken producerToken;
-
-    // These variables are volatile so that updates to them on producer threads (e.g., stubby
-    // threads) will be read by the main request thread.
-    private volatile long readyNanos = -1;
-    private volatile long startedNanos = -1;
+    // These variables are volatile since multiple threads can access, both producer threads and
+    // the main request thread.
+    // Time when the Producer method began.
+    private volatile long startTimeNanos = -1;
+    // Time when the Future completed successfully, or failed.
+    private volatile long endTimeNanos = -1;
+    // Duration is set when the Producer method finishes executing. CPU time is no longer taken,
+    // but the future itself may not be ready.
     private volatile long durationNanos = -1;
-    private volatile long completedNanos = -1;
-    private volatile ProducerToken requester = null;
 
     CriticalPathProducerMonitor(ProducerToken producerToken) {
       this.producerToken = producerToken;
     }
 
-    long readyTimeUsec() {
-      return readyNanos / 1000;
-    }
-
-    long startTimeUsec() {
-      return startedNanos / 1000;
-    }
-
-    ProducerToken token() {
-      return producerToken;
-    }
-
-    long cpuUsec() {
-      return Math.max(durationNanos / 1000, 0);
-    }
-
-    private synchronized void completeIfStillRunning() {
-      if (startedNanos != -1 && completedNanos == -1) {
-        completed();
-      }
-    }
-
-    long latencyUsec() {
-      if (startedNanos == -1) {
-        return 0L;
-      } else if (completedNanos == -1) {
-        return (elapsedNanos() - startedNanos) / 1000;
-      }
-      return latencyNanos() / 1000;
-    }
-
-    long endTimeUsec() {
-      if (startedNanos == -1) {
-        return 0L;
-      } else if (completedNanos == -1) {
-        return elapsedNanos() / 1000;
-      }
-      return completedNanos / 1000;
-    }
-
-    @Override
-    public synchronized void ready() {
-      this.readyNanos = elapsedNanos();
-    }
-
-    @Override
-    public void requested() {
-      ProducerToken requester = activeProducer.get();
-      if (requester != null) {
-        this.requester = requester;
-      }
-    }
-
-    Optional<ProducerToken> getRequester() {
-      return Optional.ofNullable(requester);
-    }
-
     @Override
     public synchronized void methodStarting() {
-      this.startedNanos = elapsedNanos();
-      activeProducer.set(producerToken);
+      startTimeNanos = ticker.read();
     }
 
     @Override
     public synchronized void methodFinished() {
-      this.durationNanos = elapsedNanos() - startedNanos;
-      activeProducer.set(null);
-    }
-
-    private synchronized void completed() {
-      this.completedNanos = elapsedNanos();
-    }
-
-    private long elapsedNanos() {
-      return ticker.read();
-    }
-
-    private long latencyNanos() {
-      completeIfStillRunning();
-      return completedNanos - startedNanos;
+      durationNanos = ticker.read() - startTimeNanos;
     }
 
     @Override
     public void succeeded(Object o) {
-      completeIfStillRunning();
+      endTimeNanos = ticker.read();
     }
 
     @Override
     public void failed(Throwable t) {
-      completeIfStillRunning();
+      endTimeNanos = ticker.read();
+    }
+
+    long startTimeUsec() {
+      if (startTimeNanos == -1) {
+        logger.info("Missing startTimeNanos on Token: " + producerToken);
+        return 0L;
+      }
+      return startTimeNanos / 1000;
+    }
+
+    long cpuUsec() {
+      if (durationNanos == -1) {
+        // This can happen if you request critical path info within a Producer.
+        logger.info("Missing duration on Token: " + producerToken + ". Assuming now().");
+        durationNanos = ticker.read() - startTimeNanos;
+      }
+      return durationNanos / 1000;
+    }
+
+    long endTimeUsec() {
+      return endTimeNanos() / 1000;
+    }
+
+    long latencyUsec() {
+      if (startTimeNanos == -1) {
+        logger.info("Missing startTimeNanos on Token: " + producerToken);
+        return 0L;
+      }
+      return (endTimeNanos() - startTimeNanos) / 1000;
+    }
+
+    private long endTimeNanos() {
+      if (endTimeNanos == -1) {
+        // This can happen if you request critical path info within a Producer.
+        logger.info("Missing endTimeNanos on Token: " + producerToken + ". Assuming now().");
+        endTimeNanos = ticker.read();
+      }
+      return endTimeNanos;
     }
   }
 }

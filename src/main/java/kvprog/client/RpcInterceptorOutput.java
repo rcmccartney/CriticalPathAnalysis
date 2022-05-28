@@ -22,7 +22,7 @@ public class RpcInterceptorOutput implements ClientInterceptor {
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
-            System.err.println("Client sees: " + responseHeader.get(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER)));
+            System.err.println("Client sees: " + responseHeader.get(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER)) + " nanos.");
             super.onHeaders(responseHeader);
           }
         }, requestHeader);

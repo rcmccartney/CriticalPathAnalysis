@@ -35,8 +35,8 @@ public class RpcInterceptor implements ServerInterceptor {
         new ForwardingServerCall.SimpleForwardingServerCall<RequestT, ResponseT>(call) {
           @Override
           public void sendHeaders(Metadata responseHeaders) {
-            responseHeaders.put(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER),
-                call.getMethodDescriptor().getFullMethodName() + ": " + sw.elapsed().getNano());
+            responseHeaders.put(
+                Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER), Integer.toString(sw.elapsed().getNano()));
             super.sendHeaders(responseHeaders);
           }
 
