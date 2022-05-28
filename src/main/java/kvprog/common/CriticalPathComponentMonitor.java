@@ -55,8 +55,9 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
   }
 
   /**
-   * The factory that creates {@code StatsMonitor}. This is scoped because it collects data
-   * throughout the request on behalf of each production component that's run.
+   * The factory that creates {@code ProductionComponentMonitor}. This is scoped because it collects data
+   * throughout the request on behalf of each production component that's run. It creates one
+   * {@code ProductionComponentMonitor} per component.
    */
   @CallScoped
   public static final class Factory extends ProductionComponentMonitor.Factory {

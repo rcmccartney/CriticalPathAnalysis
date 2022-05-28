@@ -27,7 +27,7 @@ public class BImpl extends BImplBase {
   @Override
   public void b1(B1Request req, StreamObserver<B1Reply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("B1")) {
-      ServerProducerGraph producers = ServerProducerGraph
+      BsProducerGraph producers = BsProducerGraph
           .builder().setCStub(stub).setB1Request(req).setB2Request(B2Request.getDefaultInstance())
           .build();
       try {
@@ -42,7 +42,7 @@ public class BImpl extends BImplBase {
   @Override
   public void b2(B2Request req, StreamObserver<B2Reply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("B2")) {
-      ServerProducerGraph producers = ServerProducerGraph
+      BsProducerGraph producers = BsProducerGraph
           .builder().setCStub(stub).setB2Request(req).build();
       try {
         responseObserver.onNext(producers.b2().get());

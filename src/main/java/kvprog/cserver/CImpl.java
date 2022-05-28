@@ -23,7 +23,7 @@ public class CImpl extends CImplBase {
   @Override
   public void c1(C1Request req, StreamObserver<C1Reply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("C1")) {
-      ServerProducerGraph producers = ServerProducerGraph
+      CsProducerGraph producers = CsProducerGraph
           .builder().setC1Request(req).build();
       try {
         responseObserver.onNext(producers.c1().get());
@@ -37,7 +37,7 @@ public class CImpl extends CImplBase {
   @Override
   public void c2(C2Request req, StreamObserver<C2Reply> responseObserver) {
     try (TaskCloseable task = PerfMark.traceTask("C2")) {
-      ServerProducerGraph producers = ServerProducerGraph
+      CsProducerGraph producers = CsProducerGraph
           .builder().setC1Request(C1Request.getDefaultInstance()).setC2Request(req).build();
       try {
         responseObserver.onNext(producers.c2().get());

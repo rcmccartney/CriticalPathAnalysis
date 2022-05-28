@@ -4,12 +4,13 @@ import dagger.grpc.server.CallScoped;
 import dagger.producers.ProductionComponent;
 import dagger.producers.ProductionSubcomponent;
 import dagger.producers.monitoring.ProducerToken;
+
+import javax.annotation.concurrent.ThreadSafe;
+import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 /**
  * Registry that gives each Dagger production component instance (in a given request) a unique
@@ -19,6 +20,7 @@ import javax.inject.Inject;
 @ThreadSafe
 final class Names {
 
+  // State used to create unique names per component, numbering them as required.
   private final Map<Object, String> componentNamesMap = new HashMap<>();
   private final Set<String> componentNamesSet = new HashSet<>();
 
@@ -32,13 +34,16 @@ final class Names {
   static String producerName(ProducerToken token) {
     String name = token.toString();
     if (name.startsWith("class ")) {
-      return name.substring(6);
-    } else {
-      return name;
+      name = name.substring(6);
     }
+    if (name.endsWith("Factory")) {
+      name = name.substring(0, name.length() - 7);
+    }
+
+    return name;
   }
 
-  static String componentName(Class<?> implClass) {
+  private static String componentName(Class<?> implClass) {
     Class<?> currentImplClass = implClass;
     while (!currentImplClass.equals(Object.class)) {
       Class<?> superClass = currentImplClass.getSuperclass();
@@ -63,6 +68,9 @@ final class Names {
     return componentClass.getName().replace('$', '.');
   }
 
+  /**
+   * Returns a unique component name, where conflicting names are incremented as #2, #3, etc.
+   */
   synchronized String getName(Object component) {
     if (componentNamesMap.containsKey(component)) {
       return componentNamesMap.get(component);
