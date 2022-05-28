@@ -18,17 +18,17 @@ import kvprog.common.ExecutorModule;
 @Singleton
 @ProductionComponent(
     modules = {
-        ServerProducerGraph.ServerProducerModule.class,
+        BsProducerGraph.BsProducerModule.class,
         ExecutorModule.class,
     },
-    dependencies = ServerProducerGraph.Input.class)
-interface ServerProducerGraph {
+    dependencies = BsProducerGraph.Input.class)
+interface BsProducerGraph {
 
   /**
    * Static factory method for {@link Input.Builder}
    */
   static Input.Builder builder() {
-    return new AutoValue_ServerProducerGraph_Input.Builder().setB1Request(
+    return new AutoValue_BsProducerGraph_Input.Builder().setB1Request(
             B1Request.getDefaultInstance())
         .setB2Request(B2Request.getDefaultInstance());
   }
@@ -38,7 +38,7 @@ interface ServerProducerGraph {
   ListenableFuture<B2Reply> b2();
 
   @ProducerModule
-  class ServerProducerModule {
+  class BsProducerModule {
 
     @Produces
     static B1Reply b1(B1Request request, B2Reply reply) {
@@ -79,10 +79,10 @@ interface ServerProducerGraph {
       abstract Builder setB2Request(B2Request value);
 
       /**
-       * Build the {@link ServerProducerGraph}
+       * Build the {@link BsProducerGraph}
        */
-      final ServerProducerGraph build() {
-        return DaggerServerProducerGraph.builder()
+      final BsProducerGraph build() {
+        return DaggerBsProducerGraph.builder()
             .input(autoBuild())
             .build();
       }
