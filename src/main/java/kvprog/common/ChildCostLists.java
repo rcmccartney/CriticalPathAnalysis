@@ -24,11 +24,12 @@ import kvprog.CostList;
 public final class ChildCostLists {
 
   private static final String REMOTE = "remote";
-  private final Set<GraphProducerToken> tokensWithAttributedRemoteRpcTime = new HashSet<>();
-  private final Set<GraphProducerToken> tokensWithRpcs = new HashSet<>();
-  private final ImmutableListMultimap.Builder<GraphProducerToken, ChildCostList> costListsBuilder =
+  private final Set<ComponentProducerToken> tokensWithAttributedRemoteRpcTime = new HashSet<>();
+  private final Set<ComponentProducerToken> tokensWithRpcs = new HashSet<>();
+  private final ImmutableListMultimap.Builder<ComponentProducerToken, ChildCostList> costListsBuilder =
       ImmutableListMultimap.builder();
-  private final AtomicLongMap<GraphProducerToken> remoteRpcUsecMap = AtomicLongMap.create();
+  private final AtomicLongMap<ComponentProducerToken> remoteRpcUsecMap = AtomicLongMap.create();
+
   @Inject
   public ChildCostLists() {
   }
@@ -42,50 +43,50 @@ public final class ChildCostLists {
   }
 
   public synchronized void addCostList(
-      GraphProducerToken token, CostList childCostList, boolean remote) {
+      ComponentProducerToken token, CostList childCostList, boolean remote) {
     tokensWithAttributedRemoteRpcTime.add(token);
     costListsBuilder.put(token, ChildCostList.create(childCostList, remote));
   }
 
-  public synchronized void addParallelRemoteRpcSeconds(GraphProducerToken token, double seconds) {
+  public synchronized void addParallelRemoteRpcSeconds(ComponentProducerToken token, double seconds) {
     remoteRpcUsecMap.getAndUpdate(token, oldValue -> Math.max(oldValue, secToUsec(seconds)));
   }
 
-  public synchronized void addRemoteRpcSeconds(GraphProducerToken token, double seconds) {
+  public synchronized void addRemoteRpcSeconds(ComponentProducerToken token, double seconds) {
     remoteRpcUsecMap.getAndAdd(token, secToUsec(seconds));
   }
 
   /**
    * Records that this producer node issued RPC(s).
    */
-  public synchronized void recordRpcNode(GraphProducerToken token) {
+  public synchronized void recordRpcNode(ComponentProducerToken token) {
     tokensWithRpcs.add(token);
   }
 
   /**
    * returns true if this producer node issued any RPC(s) during its execution.
    */
-  public synchronized boolean isRpcNode(GraphProducerToken token) {
+  public synchronized boolean isRpcNode(ComponentProducerToken token) {
     return tokensWithRpcs.contains(token);
   }
 
-  public synchronized ImmutableListMultimap<GraphProducerToken, CostList> costLists() {
+  public synchronized ImmutableListMultimap<ComponentProducerToken, CostList> costLists() {
     if (remoteRpcUsecMap.isEmpty()) {
       return ImmutableListMultimap.copyOf(
           Multimaps.transformValues(costListsBuilder.build(), ChildCostList::costList));
     }
 
-    ImmutableListMultimap.Builder<GraphProducerToken, CostList> costListsWithRemoteBuilder =
+    ImmutableListMultimap.Builder<ComponentProducerToken, CostList> costListsWithRemoteBuilder =
         ImmutableListMultimap.builder();
 
-    for (Map.Entry<GraphProducerToken, Collection<ChildCostList>> entry :
+    for (Map.Entry<ComponentProducerToken, Collection<ChildCostList>> entry :
         costListsBuilder.build().asMap().entrySet()) {
-      GraphProducerToken token = entry.getKey();
+      ComponentProducerToken token = entry.getKey();
       costListsWithRemoteBuilder.putAll(token, createCostLists(token, entry.getValue()));
     }
 
     // Add a new cost list for all tokens that do not have any attributed time.
-    for (Map.Entry<GraphProducerToken, Long> entry : remoteRpcUsecMap.asMap().entrySet()) {
+    for (Map.Entry<ComponentProducerToken, Long> entry : remoteRpcUsecMap.asMap().entrySet()) {
       if (!tokensWithAttributedRemoteRpcTime.contains(entry.getKey())) {
         costListsWithRemoteBuilder.put(
             entry.getKey(), createCostListWithRemoteRpcSeconds(entry.getValue()));
@@ -104,7 +105,7 @@ public final class ChildCostLists {
   //
   // TODO(b/190277126): Consider merging these return values into a single CostList.
   private ImmutableList<CostList> createCostLists(
-      GraphProducerToken token, Collection<ChildCostList> childCostLists) {
+      ComponentProducerToken token, Collection<ChildCostList> childCostLists) {
     if (childCostLists.isEmpty()) {
       return ImmutableList.of();
     }

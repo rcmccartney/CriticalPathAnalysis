@@ -18,7 +18,7 @@ public class MonitorModule {
   @Provides
   @IntoSet
   static ProductionComponentMonitor.Factory productionExecutionComponentMonitorFactory(
-      ProductionExecutionComponentMonitor.Factory factory) {
+      ProductionExecutionOrderComponentMonitor.Factory factory) {
     return factory;
   }
 

@@ -30,6 +30,7 @@ import kvprog.PutReply;
 import kvprog.PutReply.Status;
 import kvprog.PutRequest;
 import kvprog.common.CriticalPathComponentMonitor;
+import kvprog.common.CriticalPathLedgerSupplier;
 import kvprog.common.ExecutorModule;
 import kvprog.common.MonitorModule;
 
@@ -67,11 +68,14 @@ interface ServerProducerGraph {
   class ServerProducerModule {
 
     @Produces
-    static PutReply put(Provider<CriticalPathComponentMonitor.Factory> factory, PutRequest request,
+    static PutReply put(
+        CriticalPathLedgerSupplier ledgerSupplier,
+        PutRequest request,
         B1Reply b1Reply,
         @Conditional GetReply getReply,
         HashMap<String, String> cache) {
       System.err.println("In Put");
+      ledgerSupplier.currentLedger();
       PutReply reply;
       if (request.getKey().length() > 64 || request.getValue().length() > 512) {
         reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
@@ -79,7 +83,6 @@ interface ServerProducerGraph {
         cache.put(request.getKey(), request.getValue());
         reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
       }
-      System.err.println("Critical path `PUT`: " + factory.get().criticalPath());
       return reply;
     }
 

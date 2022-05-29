@@ -13,19 +13,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Registry that gives each Dagger production component instance (in a given request) a unique
- * name.
+ * Registry that gives each Dagger production component instance in a given request a unique name, and makes
+ * Producer names more readable.
  */
 @CallScoped
 @ThreadSafe
-final class Names {
+final class Namer {
 
   // State used to create unique names per component, numbering them as required.
   private final Map<Object, String> componentNamesMap = new HashMap<>();
   private final Set<String> componentNamesSet = new HashSet<>();
 
   @Inject
-  Names() {
+  Namer() {
   }
 
   /**
@@ -76,7 +76,7 @@ final class Names {
       return componentNamesMap.get(component);
     }
 
-    String baseName = Names.componentName(component.getClass());
+    String baseName = Namer.componentName(component.getClass());
     if (componentNamesSet.add(baseName)) {
       componentNamesMap.put(component, baseName);
       return baseName;
