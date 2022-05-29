@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -26,11 +25,12 @@ import kvprog.client.LoadGenerator;
 public final class CriticalPathComponentMonitor extends ProductionComponentMonitor {
   private static final Logger logger = Logger.getLogger(LoadGenerator.class.getName());
 
+  // The name of the component being monitored, e.g. kvprog.toplevelserver.ServerProducerGraph.
   private final String componentName;
+  // Timing information.
   private final Ticker ticker;
-
   // ProducerToken is a generated name for the Producer,
-  //     e.g. kvprog.toplevelserver.ServerProducerGraph_ServerProducerModule_PutFactory.
+  //     e.g. kvprog.toplevelserver.ServerProducerGraph_ServerProducerModule_Put.
   // We create one CriticalPathProducerMonitor per token.
   private final Map<ProducerToken, CriticalPathProducerMonitor> producerMonitors = new HashMap<>();
 
@@ -46,14 +46,6 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
     return monitor;
   }
 
-  synchronized long getTotalCpuUsec() {
-    long cpuUsec = 0;
-    for (CriticalPathProducerMonitor recorder : producerMonitors.values()) {
-      cpuUsec += recorder.cpuUsec();
-    }
-    return cpuUsec;
-  }
-
   /**
    * The factory that creates {@code ProductionComponentMonitor}. This is scoped because it collects data
    * throughout the request on behalf of each production component that's run. It creates one
@@ -63,47 +55,41 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
   public static final class Factory extends ProductionComponentMonitor.Factory {
 
     private final ChildCostLists childCostLists;
-    private final Map<String, CriticalPathComponentMonitor> statsMonitors = new LinkedHashMap<>();
-    private final ProductionExecutionComponentMonitor.Factory productionExecutionMonitorFactory;
-    private final Names componentNames;
+    // Map of the component name to the monitor for it. This is a singleton unless you use SubComponents in your
+    // graph of execution.
+    private final Map<String, CriticalPathComponentMonitor> componentMonitors = new LinkedHashMap<>();
+    private final ProductionExecutionOrderComponentMonitor.Factory productionExecutionMonitorFactory;
+    private final Namer componentNamer;
     private final Ticker ticker;
 
     @Inject
     Factory(
         ChildCostLists childCostLists,
-        ProductionExecutionComponentMonitor.Factory productionExecutionMonitorFactory,
-        Names componentNames) {
+        ProductionExecutionOrderComponentMonitor.Factory productionExecutionMonitorFactory,
+        Namer componentNamer) {
       this.childCostLists = childCostLists;
       this.productionExecutionMonitorFactory = productionExecutionMonitorFactory;
-      this.componentNames = componentNames;
+      this.componentNamer = componentNamer;
       this.ticker = Ticker.systemTicker();
     }
 
     @Override
     public ProductionComponentMonitor create(Object component) {
       CriticalPathComponentMonitor componentMonitor =
-          new CriticalPathComponentMonitor(componentNames.getName(component), ticker);
-      statsMonitors.put(componentMonitor.componentName, componentMonitor);
+          new CriticalPathComponentMonitor(componentNamer.getName(component), ticker);
+      componentMonitors.put(componentMonitor.componentName, componentMonitor);
       return componentMonitor;
     }
 
     @Nullable
-    private CriticalPathProducerMonitor getProducerMonitor(GraphProducerToken graphProducerToken) {
-      CriticalPathComponentMonitor componentMonitor = statsMonitors.get(
-          graphProducerToken.graphName());
+    private CriticalPathProducerMonitor getProducerMonitor(ComponentProducerToken graphProducerToken) {
+      CriticalPathComponentMonitor componentMonitor = componentMonitors.get(
+          graphProducerToken.componentName());
       if (componentMonitor == null) {
         System.err.println("ComponentMonitor is null!");
         return null;
       }
       return componentMonitor.producerMonitors.get(graphProducerToken.producerToken());
-    }
-
-    public synchronized long totalCpuUsec() {
-      long cpuUsec = 0;
-      for (CriticalPathComponentMonitor monitor : statsMonitors.values()) {
-        cpuUsec += monitor.getTotalCpuUsec();
-      }
-      return cpuUsec;
     }
 
     /**
@@ -119,9 +105,9 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      */
     public synchronized CriticalPath criticalPath() {
       System.err.println("statsMonitors");
-      statsMonitors.keySet().forEach(System.err::println);
-      statsMonitors.values().forEach(System.err::println);
-      if (statsMonitors.isEmpty()) {
+      componentMonitors.keySet().forEach(System.err::println);
+      componentMonitors.values().forEach(System.err::println);
+      if (componentMonitors.isEmpty()) {
         return CriticalPath.empty();
       }
       return singleThreadedCriticalPath(childCostLists);
@@ -131,7 +117,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      * This algorithm is simplified by assuming execution is on a single request thread.
      */
     private CriticalPath singleThreadedCriticalPath(ChildCostLists childCostLists) {
-      ImmutableList<GraphProducerToken> executionOrder =
+      ImmutableList<ComponentProducerToken> executionOrder =
           productionExecutionMonitorFactory.getExecutionOrder();
       if (executionOrder.isEmpty()) {
         return CriticalPath.create(
@@ -148,13 +134,13 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
         index--;
       }
 
-      ImmutableList<GraphProducerToken> rpcCompletionOrder =
+      ImmutableList<ComponentProducerToken> rpcCompletionOrder =
           getRpcNodesByEndTime(executionOrder.subList(0, index), childCostLists);
-      GraphProducerToken sink = executionOrder.get(index);
+      ComponentProducerToken sink = executionOrder.get(index);
 
       return CriticalPath.create(
           CriticalPath.Node.create(
-              sink.graphName(), // TODO(kas): Why sink.graphName()?
+              sink.componentName(), // TODO(kas): Why sink.graphName()?
               0,
               getProducerMonitor(sink).endTimeUsec(),
               buildCriticalPathFromSink(
@@ -163,14 +149,14 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
     }
 
     private CriticalPath.Builder buildCriticalPathFromSink(
-        GraphProducerToken sink,
+        ComponentProducerToken sink,
         int index,
-        ImmutableList<GraphProducerToken> rpcCompletionOrder,
-        ImmutableList<GraphProducerToken> executionOrder,
+        ImmutableList<ComponentProducerToken> rpcCompletionOrder,
+        ImmutableList<ComponentProducerToken> executionOrder,
         ChildCostLists childCostLists) {
       CriticalPath.Builder builder = CriticalPath.builder();
-      GraphProducerToken currentCriticalProducer = sink;
-      List<GraphProducerToken> criticalPath = new ArrayList<>();
+      ComponentProducerToken currentCriticalProducer = sink;
+      List<ComponentProducerToken> criticalPath = new ArrayList<>();
       criticalPath.add(currentCriticalProducer);
 
       int rpcIndex = rpcCompletionOrder.size() - 1;
@@ -185,7 +171,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
         // critical path start time.
         long cpuSlack = criticalPathStartTimeUsec - (pr.startTimeUsec() + pr.cpuUsec());
         long rpcSlack = Long.MAX_VALUE;
-        GraphProducerToken rpcToken = null;
+        ComponentProducerToken rpcToken = null;
         while (rpcIndex >= 0) {
           rpcToken = rpcCompletionOrder.get(rpcIndex);
           CriticalPathProducerMonitor newPr = getProducerMonitor(rpcToken);
@@ -216,9 +202,9 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       long frameworkLatencyUsec = 0;
       CriticalPathProducerMonitor currentRecorder = null;
       CriticalPathProducerMonitor previousRecorder = null;
-      ImmutableListMultimap<GraphProducerToken, CostList> tokenToCostList =
+      ImmutableListMultimap<ComponentProducerToken, CostList> tokenToCostList =
           childCostLists.costLists();
-      for (GraphProducerToken token : criticalPath) {
+      for (ComponentProducerToken token : criticalPath) {
         long latencyUsec;
         currentRecorder = getProducerMonitor(token);
         ImmutableList<CostList> costLists =
@@ -264,14 +250,14 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       return builder;
     }
 
-    private ImmutableList<GraphProducerToken> getRpcNodesByEndTime(
-        ImmutableList<GraphProducerToken> executionOrder, ChildCostLists childCostLists) {
+    private ImmutableList<ComponentProducerToken> getRpcNodesByEndTime(
+        ImmutableList<ComponentProducerToken> executionOrder, ChildCostLists childCostLists) {
       return executionOrder.stream()
           .filter(childCostLists::isRpcNode)
           .sorted(
-              new Comparator<GraphProducerToken>() {
+              new Comparator<ComponentProducerToken>() {
                 @Override
-                public int compare(GraphProducerToken a, GraphProducerToken b) {
+                public int compare(ComponentProducerToken a, ComponentProducerToken b) {
                   return Long.compare(
                       getProducerMonitor(a).endTimeUsec(), getProducerMonitor(b).endTimeUsec());
                 }
@@ -280,10 +266,10 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
     }
 
     private CriticalPath.Node criticalPathNodeFromProducer(
-        ImmutableList<CostList> childCostLists, GraphProducerToken producer, long latencyUsec) {
+        ImmutableList<CostList> childCostLists, ComponentProducerToken producer, long latencyUsec) {
       CriticalPathProducerMonitor producerRecorder = getProducerMonitor(producer);
       return CriticalPath.Node.builder()
-          .name(Names.producerName(producer.producerToken()))
+          .name(Namer.producerName(producer.producerToken()))
           .cpuUsec(Math.min(latencyUsec, producerRecorder.cpuUsec()))
           .latencyUsec(latencyUsec)
           .childCostLists(childCostLists)

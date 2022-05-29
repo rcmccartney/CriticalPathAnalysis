@@ -6,7 +6,7 @@ import dagger.producers.monitoring.ProductionComponentMonitor;
 import javax.inject.Inject;
 
 /**
- * A monitor that sets up and tears down the producer's name in a thread-local.
+ * Sets up and tears down the producer's name into the {@link ComponentProducerTokenContext}.
  */
 final class ThreadLocalComponentMonitor extends ProductionComponentMonitor {
 
@@ -23,37 +23,36 @@ final class ThreadLocalComponentMonitor extends ProductionComponentMonitor {
 
   static final class Factory extends ProductionComponentMonitor.Factory {
 
-    private final Names componentNames;
+    private final Namer componentNamer;
 
     @Inject
-    Factory(Names componentNames) {
-      this.componentNames = componentNames;
+    Factory(Namer componentNamer) {
+      this.componentNamer = componentNamer;
     }
 
     @Override
     public ProductionComponentMonitor create(Object component) {
-      return new ThreadLocalComponentMonitor(componentNames.getName(component));
+      return new ThreadLocalComponentMonitor(componentNamer.getName(component));
     }
   }
 
   static final class ThreadLocalProducerMonitor extends ProducerMonitor {
 
-    private final GraphProducerToken token;
+    private final ComponentProducerToken token;
 
     ThreadLocalProducerMonitor(String componentName, ProducerToken token) {
       this.token =
-          GraphProducerToken.builder().setGraphName(componentName).setProducerToken(token)
-              .setTokenName(Names.producerName(token)).build();
+          ComponentProducerToken.builder().setComponentName(componentName).setProducerToken(token).build();
     }
 
     @Override
     public void methodStarting() {
-      // System.err.println("methodStarting: " + token);
+      ComponentProducerTokenContext.set(token);
     }
 
     @Override
     public void methodFinished() {
-      // System.err.println("methodFinished: " + token);
+      ComponentProducerTokenContext.remove();
     }
   }
 }
