@@ -18,45 +18,56 @@ function getCostList() {
         });
 }
 
-let data = [31, 42, 56, 92, 84, 72, 53, 43, 29, 24, 64, 49];
-
-const barWidth = 75;
-const barOffset = 10;
-const height = 600;
-const width = 800;
-
-let yScale = d3.scaleLinear()
-    .domain([0, d3.max(data)])
-    .range([0, height]);
+const width = 900;
+const height = 450;
+const margin = { top: 50, bottom: 50, left: 50, right: 50 };
 
 function display (result) {
-    d3.select('#bar-graph')
+   // console.log(result);
+    const costELementList = result.map(element => element.getElementList());
+    console.log(costELementList);
+    console.log("print each cost element");
+    const xy = [];
+    costELementList[0].forEach(element => {
+        xy.push({x:element.getSource(),y:element.getCostSec()});
+    });
+    console.log(xy);
+    const svg = d3.select('#bar-graph')
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .style('background', '#3A742C')
-        .selectAll('rect')
-        .data(data)
-        .enter()
-        .append('rect')
-        .style('fill', '#30A08B')
-        .attr('width', barWidth)
-        .attr('height', (d) => {
-            return yScale(d);
-        })
-        .attr('x', (d, i) => {
-            return i * (barWidth + barOffset);
-        })
-        .attr('y', (d) => {
-            return height - yScale(d);
-        })
-    ;
+        .attr('width', width - margin.left - margin.right)
+        .attr('height', height - margin.top - margin.bottom)
+        .attr("viewBox", [0, 0, width, height]);
+
+    const x = d3.scaleBand()
+        .domain(d3.range(xy.length))
+        .range([margin.left, width - margin.right])
+        .padding(0.1)
+
+    const y = d3.scaleLinear()
+        .domain([0, 10])
+        .range([height - margin.bottom, margin.top])
+
+    svg
+        .append("g")
+        .attr("fill", 'royalblue')
+        .selectAll("rect")
+        .data(xy.sort((a, b) => d3.descending(a.y, b.y)))
+        .join("rect")
+        .attr("x", (d, i) => x(i))
+        .attr("y", d => y(xy.y))
+        .attr('title', (d) => xy.y)
+        .attr("class", "rect")
+        .attr("height", (d) => {return  y(d)})
+        .attr("width", x.bandwidth())
+        .attr("transform", `translate(${margin.left}, 0)`)
+        .call(d3.axisLeft(y).ticks(null, xy.format))
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).tickFormat(i => xy[i].x))
+        .attr("font-size", '20px');
 }
 
 async function f1() {
     var x = await getCostList();
-    console.log(x);
-    // call display with response to show graph
     display(x);
 }
 
