@@ -10,12 +10,14 @@ enableDevTools([
   client,
 ]);
 
-var myData;
-client.calls(request, {}, (err, response) => {
-    myData = response.getCostListList();
-});
+function getCostList() {
+    return new Promise(resolve => {
+        client.calls(request, {}, (err, response) => {
+                resolve(response.getCostListList());
+            });
+        });
+}
 
-console.log(myData);
 let data = [31, 42, 56, 92, 84, 72, 53, 43, 29, 24, 64, 49];
 
 const barWidth = 75;
@@ -27,24 +29,36 @@ let yScale = d3.scaleLinear()
     .domain([0, d3.max(data)])
     .range([0, height]);
 
-d3.select('#bar-graph')
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height)
-    .style('background', '#3A742C')
-    .selectAll('rect')
-    .data(data)
-    .enter()
-    .append('rect')
-    .style('fill', '#30A08B')
-    .attr('width', barWidth)
-    .attr('height', (d) => {
-        return yScale(d);
-    })
-    .attr('x', (d, i) => {
-        return i * (barWidth + barOffset);
-    })
-    .attr('y', (d) => {
-        return height - yScale(d);
-    })
-;
+function display (result) {
+    d3.select('#bar-graph')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .style('background', '#3A742C')
+        .selectAll('rect')
+        .data(data)
+        .enter()
+        .append('rect')
+        .style('fill', '#30A08B')
+        .attr('width', barWidth)
+        .attr('height', (d) => {
+            return yScale(d);
+        })
+        .attr('x', (d, i) => {
+            return i * (barWidth + barOffset);
+        })
+        .attr('y', (d) => {
+            return height - yScale(d);
+        })
+    ;
+}
+
+async function f1() {
+    var x = await getCostList();
+    console.log(x);
+    // call display with response to show graph
+    display(x);
+}
+
+f1();
+
