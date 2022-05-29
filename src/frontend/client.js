@@ -47,8 +47,7 @@ function display (result) {
         .domain([0, 10])
         .range([height - margin.bottom, margin.top])
 
-    svg
-        .append("g")
+    svg.append("g")
         .attr("fill", 'royalblue')
         .selectAll("rect")
         .data(xy.sort((a, b) => d3.descending(a.y, b.y)))
@@ -58,12 +57,19 @@ function display (result) {
         .attr('title', (d) => xy.y)
         .attr("class", "rect")
         .attr("height", (d) => {return  y(d)})
-        .attr("width", x.bandwidth())
+        .attr("width", x.bandwidth());
+
+    svg.append("g")
         .attr("transform", `translate(${margin.left}, 0)`)
         .call(d3.axisLeft(y).ticks(null, xy.format))
+        .attr("font-size", '20px');
+
+    svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
         .call(d3.axisBottom(x).tickFormat(i => xy[i].x))
         .attr("font-size", '20px');
+
+    return svg.node();
 }
 
 async function f1() {
