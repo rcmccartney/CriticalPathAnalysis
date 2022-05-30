@@ -7,15 +7,14 @@ import io.perfmark.TaskCloseable;
 import io.perfmark.traceviewer.TraceEventViewer;
 import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
-import kvprog.common.Constants;
 import kvprog.common.CriticalPath;
 import kvprog.common.InterceptorModule.CriticalPaths;
 import kvprog.toplevelserver.TopComponentModule.Cache;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @GrpcService(grpcClass = KvStoreGrpc.class)
@@ -62,6 +61,9 @@ class KvStoreImpl extends KvStoreImplBase {
     } catch (IOException e) {
       e.printStackTrace();
     }
+
+    Optional<Integer> lastSpan = criticalPaths.keySet().stream().max(Integer::compareTo);
+    lastSpan.ifPresent(spanId -> System.err.println("Cost list of PutRequest: " + criticalPaths.get(spanId).toCostList()));
   }
 
   @Override
@@ -88,7 +90,8 @@ class KvStoreImpl extends KvStoreImplBase {
       e.printStackTrace();
     }
 
-    criticalPaths.values().forEach(cp -> System.err.println("Final cost list: " + cp.toCostList()));
+    Optional<Integer> lastSpan = criticalPaths.keySet().stream().max(Integer::compareTo);
+    lastSpan.ifPresent(spanId -> System.err.println("Cost list of GetRequest: " + criticalPaths.get(spanId).toCostList()));
   }
 
   @Override

@@ -11,4 +11,7 @@ sleep 2
 read -p "Press enter to continue"
 ./build/install/mygrpc/bin/client 100 &
 sleep 2
+read -p "Press enter to continue"
+./build/install/mygrpc/bin/client "queryOfDeath" 100 &
+sleep 2
 read -p "Press enter to quit"

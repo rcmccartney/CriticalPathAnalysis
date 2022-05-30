@@ -60,8 +60,10 @@ public class ServerRpcInterceptor implements ServerInterceptor {
           @Override
           public void sendHeaders(Metadata responseHeaders) {
             responseHeaders.put(elapsedTimeKey, Integer.toString(sw.elapsed().getNano()));
-            System.err.println("Sending over: " + criticalPaths.get(serverSpan));
-            responseHeaders.put(costListKey, criticalPaths.get(serverSpan).toCostList().toByteArray());
+            // If this is from the frontend, we have no critical path to send.
+            if (criticalPaths.get(serverSpan) != null) {
+              responseHeaders.put(costListKey, criticalPaths.get(serverSpan).toCostList().toByteArray());
+            }
             super.sendHeaders(responseHeaders);
           }
         },
