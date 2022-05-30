@@ -28,4 +28,11 @@ public class MonitorModule {
       CriticalPathComponentMonitor.Factory factory) {
     return factory;
   }
+
+  @Provides
+  @IntoSet
+  static ProductionComponentMonitor.Factory rpcContextComponentMonitorFactory(
+      ProducerRpcContextComponentMonitor.Factory factory) {
+    return factory;
+  }
 }

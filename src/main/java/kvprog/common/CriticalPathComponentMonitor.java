@@ -7,17 +7,13 @@ import dagger.grpc.server.CallScoped;
 import dagger.producers.monitoring.ProducerMonitor;
 import dagger.producers.monitoring.ProducerToken;
 import dagger.producers.monitoring.ProductionComponentMonitor;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import javax.annotation.Nullable;
-import javax.inject.Inject;
 import kvprog.CostList;
 import kvprog.client.LoadGenerator;
+
+import javax.annotation.Nullable;
+import javax.inject.Inject;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * A monitor that calculates the critical path of execution.
@@ -102,37 +98,29 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      *   <li>For a producer P on the critical path, determine if P was waiting on the request thread
      *       to execute a previously scheduled producer or if P was waiting on an RPC to return.
      * </ol>
+     *
+     * <p>This algorithm is simplified by assuming execution is on a single request thread.
      */
     public synchronized CriticalPath criticalPath() {
-      System.err.println("statsMonitors");
-      componentMonitors.keySet().forEach(System.err::println);
-      componentMonitors.values().forEach(System.err::println);
       if (componentMonitors.isEmpty()) {
+        System.err.println("No Component Monitor found to calculate critical path!");
         return CriticalPath.empty();
       }
-      return singleThreadedCriticalPath(childCostLists);
-    }
 
-    /**
-     * This algorithm is simplified by assuming execution is on a single request thread.
-     */
-    private CriticalPath singleThreadedCriticalPath(ChildCostLists childCostLists) {
       ImmutableList<ComponentProducerToken> executionOrder =
           productionExecutionMonitorFactory.getExecutionOrder();
+
       if (executionOrder.isEmpty()) {
-        return CriticalPath.create(
-            CriticalPath.Node.create(
-                "", /* graph name */
-                0, /* start time */
-                0, /* end time */
-                CriticalPath.builder().build()));
+        return CriticalPath.empty();
       }
 
       int index = executionOrder.size() - 1;
       // There is no useful information from unstarted nodes, so we skip them.
-      while (index > 0 && getProducerMonitor(executionOrder.get(index)).endTimeUsec() == 0) {
+      while (index > 0 && getProducerMonitor(executionOrder.get(index)).startTimeUsec() == 0) {
+        System.err.println("Skipping unstarted node: " + getProducerMonitor(executionOrder.get(index)));
         index--;
       }
+      System.err.println("HERE! ");
 
       ImmutableList<ComponentProducerToken> rpcCompletionOrder =
           getRpcNodesByEndTime(executionOrder.subList(0, index), childCostLists);
@@ -252,6 +240,9 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
 
     private ImmutableList<ComponentProducerToken> getRpcNodesByEndTime(
         ImmutableList<ComponentProducerToken> executionOrder, ChildCostLists childCostLists) {
+      executionOrder.stream()
+          .filter(childCostLists::isRpcNode)
+          .forEach(r -> System.err.println("RPC node!! " + r));
       return executionOrder.stream()
           .filter(childCostLists::isRpcNode)
           .sorted(

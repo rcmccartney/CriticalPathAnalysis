@@ -10,6 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import kvprog.CGrpc;
+import kvprog.common.ClientRpcInterceptor;
 
 @Module
 interface BackendModule {
@@ -21,7 +22,8 @@ interface BackendModule {
 
   @Singleton
   @Provides
-  static ManagedChannel provideChannel(@CServerTarget String target, @CServerPort String port) {
+  static ManagedChannel provideChannel(
+      @CServerTarget String target, @CServerPort String port, ClientRpcInterceptor interceptor) {
     // Create a communication channel to the server, known as a Channel. Channels are thread-safe
     // and reusable. It is common to create channels at the beginning of your application and reuse
     // them until the application shuts down.
@@ -29,6 +31,7 @@ interface BackendModule {
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
         // needing certificates.
         .usePlaintext()
+        .intercept(interceptor)
         .build();
   }
 

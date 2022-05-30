@@ -8,31 +8,19 @@ import dagger.producers.Producer;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
+import kvprog.*;
+import kvprog.PutReply.Status;
+import kvprog.common.Constants;
+import kvprog.common.CriticalPathComponentMonitor;
+import kvprog.common.ExecutorModule;
+import kvprog.common.MonitorModule;
+
+import javax.inject.Provider;
+import javax.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
-import javax.inject.Provider;
-import javax.inject.Qualifier;
-import kvprog.B1Reply;
-import kvprog.B1Request;
-import kvprog.B2Reply;
-import kvprog.B2Request;
-import kvprog.BGrpc;
-import kvprog.C1Reply;
-import kvprog.C1Request;
-import kvprog.C2Reply;
-import kvprog.C2Request;
-import kvprog.CGrpc;
-import kvprog.GetReply;
-import kvprog.GetRequest;
-import kvprog.PutReply;
-import kvprog.PutReply.Status;
-import kvprog.PutRequest;
-import kvprog.common.CriticalPathComponentMonitor;
-import kvprog.common.CriticalPathLedgerSupplier;
-import kvprog.common.ExecutorModule;
-import kvprog.common.MonitorModule;
 
 @CallScoped
 @ProductionComponent(
@@ -69,13 +57,11 @@ interface ServerProducerGraph {
 
     @Produces
     static PutReply put(
-        CriticalPathLedgerSupplier ledgerSupplier,
         PutRequest request,
         B1Reply b1Reply,
         @Conditional GetReply getReply,
         HashMap<String, String> cache) {
       System.err.println("In Put");
-      ledgerSupplier.currentLedger();
       PutReply reply;
       if (request.getKey().length() > 64 || request.getValue().length() > 512) {
         reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
@@ -103,7 +89,8 @@ interface ServerProducerGraph {
     }
 
     @Produces
-    static GetReply get(Provider<CriticalPathComponentMonitor.Factory> factory,
+    static GetReply get(
+        Provider<CriticalPathComponentMonitor.Factory> factory,
         GetRequest request,
         HashMap<String, String> cache,
         // TODO: make this conditional.

@@ -1,18 +1,21 @@
 package kvprog.client;
 
 import io.grpc.*;
-import io.grpc.Metadata.Key;
+import kvprog.common.InterceptorModule;
 
 import javax.inject.Inject;
 
-public class RpcInterceptorOutput implements ClientInterceptor {
+public class LeafClientRpcInterceptor implements ClientInterceptor {
+  private final Metadata.Key<String> elapsedTimeKey;
 
   @Inject
-  RpcInterceptorOutput() {
+  LeafClientRpcInterceptor(@InterceptorModule.ElapsedTimeKey Metadata.Key<String> elapsedTimeKey) {
+    this.elapsedTimeKey = elapsedTimeKey;
   }
 
   public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
-      final MethodDescriptor<ReqT, RespT> methodDescriptor, final CallOptions callOptions,
+      final MethodDescriptor<ReqT, RespT> methodDescriptor,
+      final CallOptions callOptions,
       final Channel channel) {
     return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(
         channel.newCall(methodDescriptor, callOptions)) {
@@ -22,7 +25,7 @@ public class RpcInterceptorOutput implements ClientInterceptor {
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
-            System.err.println("Client sees: " + responseHeader.get(Key.of("elapsed_time", Metadata.ASCII_STRING_MARSHALLER)) + " nanos.");
+            System.err.println("Leaf client sees: " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
             super.onHeaders(responseHeader);
           }
         }, requestHeader);

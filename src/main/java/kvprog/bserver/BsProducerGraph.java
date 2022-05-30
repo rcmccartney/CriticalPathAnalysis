@@ -2,24 +2,20 @@ package kvprog.bserver;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
+import dagger.grpc.server.CallScoped;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
-import javax.inject.Singleton;
-import kvprog.B1Reply;
-import kvprog.B1Request;
-import kvprog.B2Reply;
-import kvprog.B2Request;
-import kvprog.C1Reply;
-import kvprog.C1Request;
-import kvprog.CGrpc;
+import kvprog.*;
 import kvprog.common.ExecutorModule;
+import kvprog.common.MonitorModule;
 
-@Singleton
+@CallScoped
 @ProductionComponent(
     modules = {
         BsProducerGraph.BsProducerModule.class,
         ExecutorModule.class,
+        MonitorModule.class,
     },
     dependencies = BsProducerGraph.Input.class)
 interface BsProducerGraph {

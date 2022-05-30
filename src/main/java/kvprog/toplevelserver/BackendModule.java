@@ -4,13 +4,15 @@ import dagger.Module;
 import dagger.Provides;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import kvprog.BGrpc;
+import kvprog.CGrpc;
+import kvprog.common.ClientRpcInterceptor;
+
+import javax.inject.Qualifier;
+import javax.inject.Singleton;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import javax.inject.Qualifier;
-import javax.inject.Singleton;
-import kvprog.BGrpc;
-import kvprog.CGrpc;
 
 @Module
 interface BackendModule {
@@ -23,7 +25,8 @@ interface BackendModule {
   @Singleton
   @Provides
   @BManagedChannel
-  static ManagedChannel provideBChannel(@BServerTarget String target, @BServerPort String port) {
+  static ManagedChannel provideBChannel(
+      @BServerTarget String target, @BServerPort String port, ClientRpcInterceptor interceptor) {
     // Create a communication channel to the server, known as a Channel. Channels are thread-safe
     // and reusable. It is common to create channels at the beginning of your application and reuse
     // them until the application shuts down.
@@ -31,6 +34,7 @@ interface BackendModule {
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
         // needing certificates.
         .usePlaintext()
+        .intercept(interceptor)
         .build();
   }
 
@@ -42,7 +46,8 @@ interface BackendModule {
   @Singleton
   @Provides
   @CManagedChannel
-  static ManagedChannel provideCChannel(@CServerTarget String target, @CServerPort String port) {
+  static ManagedChannel provideCChannel(
+      @CServerTarget String target, @CServerPort String port, ClientRpcInterceptor interceptor) {
     // Create a communication channel to the server, known as a Channel. Channels are thread-safe
     // and reusable. It is common to create channels at the beginning of your application and reuse
     // them until the application shuts down.
@@ -50,6 +55,7 @@ interface BackendModule {
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
         // needing certificates.
         .usePlaintext()
+        .intercept(interceptor)
         .build();
   }
 

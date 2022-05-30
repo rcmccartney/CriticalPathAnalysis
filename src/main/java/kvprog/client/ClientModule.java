@@ -24,7 +24,7 @@ interface ClientModule {
   @Provides
   static ManagedChannel provideChannel(@ServerTarget String target,
                                        @ServerPort String port,
-                                       RpcInterceptorOutput rpcInterceptorOutput) {
+                                       LeafClientRpcInterceptor leafClientRpcInterceptor) {
     // Create a communication channel to the server, known as a Channel. Channels are thread-safe
     // and reusable. It is common to create channels at the beginning of your application and reuse
     // them until the application shuts down.
@@ -32,7 +32,7 @@ interface ClientModule {
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
         // needing certificates.
         .usePlaintext()
-        .intercept(rpcInterceptorOutput)
+        .intercept(leafClientRpcInterceptor)
         .build();
   }
 

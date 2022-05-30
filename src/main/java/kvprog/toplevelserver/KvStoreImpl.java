@@ -1,36 +1,32 @@
 package kvprog.toplevelserver;
 
-import com.google.common.collect.Multiset;
 import dagger.grpc.server.GrpcService;
 import io.grpc.stub.StreamObserver;
 import io.perfmark.PerfMark;
 import io.perfmark.TaskCloseable;
 import io.perfmark.traceviewer.TraceEventViewer;
+import kvprog.*;
+import kvprog.KvStoreGrpc.KvStoreImplBase;
+import kvprog.common.Constants;
+import kvprog.toplevelserver.TopComponentModule.Cache;
+
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
-import javax.inject.Inject;
-
-import kvprog.*;
-import kvprog.KvStoreGrpc.KvStoreImplBase;
-import kvprog.common.InterceptorModule.CallMetadata;
-import kvprog.toplevelserver.TopComponentModule.Cache;
 
 @GrpcService(grpcClass = KvStoreGrpc.class)
 class KvStoreImpl extends KvStoreImplBase {
 
-  private final Multiset<String> calls;
   private final HashMap<String, String> cache;
   private final BGrpc.BFutureStub bstub;
   private final CGrpc.CFutureStub cstub;
 
   @Inject
   KvStoreImpl(
-      @CallMetadata Multiset<String> calls,
       @Cache HashMap<String, String> cache,
       BGrpc.BFutureStub bstub,
       CGrpc.CFutureStub cstub) {
-    this.calls = calls;
     this.cache = cache;
     this.bstub = bstub;
     this.cstub = cstub;

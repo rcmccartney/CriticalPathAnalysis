@@ -15,7 +15,7 @@ import java.util.List;
 import javax.inject.Singleton;
 import kvprog.BGrpc;
 import kvprog.common.InterceptorModule;
-import kvprog.common.RpcInterceptor;
+import kvprog.common.ServerRpcInterceptor;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -114,7 +114,7 @@ public class ServerApp {
       @Provides
       @ForGrpcService(BGrpc.class)
       static List<? extends ServerInterceptor> serviceInterceptors(
-          RpcInterceptor interceptor) {
+          ServerRpcInterceptor interceptor) {
         return Arrays.asList(interceptor);
       }
     }

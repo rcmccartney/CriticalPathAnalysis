@@ -63,7 +63,7 @@ public class KvStoreImplTest {
     BGrpc.BFutureStub bStub = BGrpc.newFutureStub(channel);
     grpcCleanup.register(InProcessServerBuilder
         .forName(topServerName).directExecutor()
-        .addService(new KvStoreImpl(calls, cache, bStub, cStub)).build().start());
+        .addService(new KvStoreImpl(cache, bStub, cStub)).build().start());
 
     KvStoreBlockingStub blockingStub = KvStoreGrpc.newBlockingStub(
         // Create a client channel and register for automatic graceful shutdown.

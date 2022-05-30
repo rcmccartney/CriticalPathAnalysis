@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 import kvprog.common.ExecutorModule;
+import kvprog.common.InterceptorModule;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -76,7 +77,7 @@ public class ClientApp {
   }
 
   @Singleton
-  @Component(modules = {ClientModule.class, ExecutorModule.class})
+  @Component(modules = {ClientModule.class, ExecutorModule.class, InterceptorModule.class})
   public interface Client {
 
     LoadGenerator loadGen();
