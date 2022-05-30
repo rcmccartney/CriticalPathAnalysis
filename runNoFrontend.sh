@@ -1,14 +1,7 @@
 #!/bin/bash
 
-# Cleanup anything left from earlier runs.
-kill $(ps aux | grep '[/]usr/bin/java'  | awk '{print $2}')
-kill $(ps aux | grep '[m]ygrpc' | awk '{print $2}')
-
-echo "************************"
-echo "* Build & test"
-echo "************************"
-./gradlew installDist -PskipAndroid=true || { echo 'Build failed!' ; exit 1; }
-./gradlew test || { echo 'Tests failed!' ; exit 1; }
+./runCleanup.sh
+./runBackendBuild.sh
 
 echo "************************"
 echo "* Run top level server"
@@ -39,3 +32,4 @@ echo "*****************"
 kill $topServerPID
 kill $bServerPID
 kill $cServerPID
+sleep 1
