@@ -1,12 +1,14 @@
 package kvprog.common;
 
+import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
+import dagger.grpc.server.CallScoped;
 import dagger.multibindings.IntoSet;
 import dagger.producers.monitoring.ProductionComponentMonitor;
 
 @Module
-public class MonitorModule {
+public abstract class MonitorModule {
 
   @Provides
   @IntoSet
@@ -21,6 +23,10 @@ public class MonitorModule {
       ProductionExecutionOrderComponentMonitor.Factory factory) {
     return factory;
   }
+
+  @CallScoped
+  @Binds
+  abstract CriticalPathSupplier bindCriticalPathSupplier(CriticalPathComponentMonitor.Factory factory);
 
   @Provides
   @IntoSet

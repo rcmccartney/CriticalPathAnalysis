@@ -10,8 +10,9 @@ import kvprog.C1Reply;
 import kvprog.C1Request;
 import kvprog.C2Reply;
 import kvprog.C2Request;
-import kvprog.common.ExecutorModule;
-import kvprog.common.MonitorModule;
+import kvprog.common.*;
+
+import java.util.Map;
 
 @CallScoped
 @ProductionComponent(
@@ -40,20 +41,30 @@ interface CsProducerGraph {
   class CsProducerModule {
 
     @Produces
-    static C1Reply c1(C1Request request) {
+    static C1Reply c1(
+        C1Request request,
+        Map<Integer, CriticalPath> criticalPaths,
+        CriticalPathSupplier supplier) {
       System.err.println("In C1");
+      criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return C1Reply.getDefaultInstance();
     }
 
     @Produces
-    static C2Reply c2(C1Reply c1Reply, C2Request c2Request) {
+    static C2Reply c2(
+        C1Reply c1Reply,
+        C2Request c2Request,
+        Map<Integer, CriticalPath> criticalPaths,
+        CriticalPathSupplier supplier) {
       System.err.println("In C2");
+      criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return C2Reply.getDefaultInstance();
     }
   }
 
   @AutoValue
   abstract class Input {
+    abstract Map<Integer, CriticalPath> criticalPaths();
 
     abstract C1Request c1Request();
 
@@ -63,6 +74,8 @@ interface CsProducerGraph {
     abstract static class Builder {
 
       abstract Input autoBuild();
+
+      abstract Builder setCriticalPaths(Map<Integer, CriticalPath> value);
 
       abstract Builder setC1Request(C1Request value);
 

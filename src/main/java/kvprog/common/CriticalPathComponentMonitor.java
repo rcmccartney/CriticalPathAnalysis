@@ -9,6 +9,7 @@ import dagger.producers.monitoring.ProducerToken;
 import dagger.producers.monitoring.ProductionComponentMonitor;
 import kvprog.CostList;
 import kvprog.client.LoadGenerator;
+import kvprog.cserver.CServer;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -48,7 +49,8 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
    * {@code ProductionComponentMonitor} per component.
    */
   @CallScoped
-  public static final class Factory extends ProductionComponentMonitor.Factory {
+  public static final class Factory extends ProductionComponentMonitor.Factory implements CriticalPathSupplier {
+    private static final Logger c = Logger.getLogger(CServer.class.getName());
 
     private final ChildCostLists childCostLists;
     // Map of the component name to the monitor for it. This is a singleton unless you use SubComponents in your
@@ -82,7 +84,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       CriticalPathComponentMonitor componentMonitor = componentMonitors.get(
           graphProducerToken.componentName());
       if (componentMonitor == null) {
-        System.err.println("ComponentMonitor is null!");
+        logger.severe("ComponentMonitor is null!");
         return null;
       }
       return componentMonitor.producerMonitors.get(graphProducerToken.producerToken());
@@ -103,14 +105,14 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      */
     public synchronized CriticalPath criticalPath() {
       if (componentMonitors.isEmpty()) {
-        System.err.println("No Component Monitor found to calculate critical path!");
+        logger.severe("No Component Monitor found to calculate critical path!");
         return CriticalPath.empty();
       }
 
       ImmutableList<ComponentProducerToken> executionOrder =
           productionExecutionMonitorFactory.getExecutionOrder();
-
       if (executionOrder.isEmpty()) {
+        logger.severe("No execution order found to calculate critical path!");
         return CriticalPath.empty();
       }
 
@@ -120,22 +122,32 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
         System.err.println("Skipping unstarted node: " + getProducerMonitor(executionOrder.get(index)));
         index--;
       }
-      System.err.println("HERE! ");
-
-      ImmutableList<ComponentProducerToken> rpcCompletionOrder =
-          getRpcNodesByEndTime(executionOrder.subList(0, index), childCostLists);
       ComponentProducerToken sink = executionOrder.get(index);
+      logger.info("Critical path start node: " + sink);
+      ImmutableList<ComponentProducerToken> rpcCompletionOrder =
+          executionOrder.subList(0, index).stream()
+              .filter(childCostLists::isRpcNode)
+              .sorted(Comparator.comparingLong(cpt -> getProducerMonitor(cpt).endTimeUsec()))
+              .collect(ImmutableList.toImmutableList());
+      System.err.println("rpcCompletionOrder: " + rpcCompletionOrder);
 
       return CriticalPath.create(
           CriticalPath.Node.create(
-              sink.componentName(), // TODO(kas): Why sink.graphName()?
+              sink.componentName(),
               0,
+              // If this is called in the sink, endTime will be now().
               getProducerMonitor(sink).endTimeUsec(),
               buildCriticalPathFromSink(
                   sink, index, rpcCompletionOrder, executionOrder, childCostLists)
                   .build()));
     }
 
+    /**
+     * Starting at the sink, work backwards through nodes in the order that they were executed
+     * to build the critical path to the source. At each step, decide between adding the node that
+     * started immediately prior to the current node or adding the most recently initiated RPC node
+     * to the critical path. Make this decision using by minimizing the estimated slack time.
+     */
     private CriticalPath.Builder buildCriticalPathFromSink(
         ComponentProducerToken sink,
         int index,
@@ -236,24 +248,6 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       }
 
       return builder;
-    }
-
-    private ImmutableList<ComponentProducerToken> getRpcNodesByEndTime(
-        ImmutableList<ComponentProducerToken> executionOrder, ChildCostLists childCostLists) {
-      executionOrder.stream()
-          .filter(childCostLists::isRpcNode)
-          .forEach(r -> System.err.println("RPC node!! " + r));
-      return executionOrder.stream()
-          .filter(childCostLists::isRpcNode)
-          .sorted(
-              new Comparator<ComponentProducerToken>() {
-                @Override
-                public int compare(ComponentProducerToken a, ComponentProducerToken b) {
-                  return Long.compare(
-                      getProducerMonitor(a).endTimeUsec(), getProducerMonitor(b).endTimeUsec());
-                }
-              })
-          .collect(ImmutableList.toImmutableList());
     }
 
     private CriticalPath.Node criticalPathNodeFromProducer(

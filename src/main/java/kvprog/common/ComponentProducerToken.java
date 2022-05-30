@@ -20,7 +20,7 @@ abstract class ComponentProducerToken {
   abstract ProducerToken producerToken();
 
   /**
-   * Builder for GraphProducerToken.
+   * Builder for {@link ComponentProducerToken}.
    */
   @AutoValue.Builder
   abstract static class Builder {

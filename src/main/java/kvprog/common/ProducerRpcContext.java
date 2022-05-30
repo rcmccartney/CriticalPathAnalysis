@@ -19,7 +19,11 @@ public abstract class ProducerRpcContext {
    * #setActiveRpcContext}.
    */
   public static void clearActiveRpcContext() {
-    activeContext.remove();
+    if (activeContext.get() == null) {
+      logger.severe("Current context is empty! Cannot clear.");
+    } else {
+      activeContext.remove();
+    }
   }
 
   /**

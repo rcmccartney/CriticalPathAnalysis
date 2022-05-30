@@ -2,23 +2,33 @@ package kvprog.common;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.*;
 import kvprog.common.InterceptorModule.TraceIdKey;
-
+import kvprog.common.InterceptorModule.CriticalPaths;
+import kvprog.common.InterceptorModule.CostListKey;
+import kvprog.CostList;
 import javax.inject.Inject;
 import java.time.Duration;
+import java.util.Map;
 
 public class ClientRpcInterceptor implements ClientInterceptor {
   private final Cache<Integer, Long> parallelRpcMonitor;
+  private final Map<Integer, CriticalPath> criticalPaths;
+  private final Metadata.Key<byte[]> costListKey;
   private final Metadata.Key<String> traceIdMetadataKey;
   private final Ticker ticker;
 
   @Inject
   ClientRpcInterceptor(
       Cache<Integer, Long> parallelRpcMonitor,
+      @CriticalPaths Map<Integer, CriticalPath> criticalPaths,
+      @CostListKey Metadata.Key<byte[]> costListKey,
       @TraceIdKey Metadata.Key<String> traceIdMetadataKey,
       Ticker ticker) {
     this.parallelRpcMonitor = parallelRpcMonitor;
+    this.criticalPaths = criticalPaths;
+    this.costListKey = costListKey;
     this.traceIdMetadataKey = traceIdMetadataKey;
     this.ticker = ticker;
   }
@@ -32,8 +42,7 @@ public class ClientRpcInterceptor implements ClientInterceptor {
       @Override
       public void start(Listener<RespT> responseListener, Metadata requestHeader) {
         long startNanos = ticker.read();
-        ProducerRpcContext context = ProducerRpcContext.getActiveRpcContext();
-        CriticalPathLedger ledger = context.criticalPathLedgerSupplier().currentLedger();
+        CriticalPathLedger ledger = ProducerRpcContext.getActiveRpcContext().criticalPathLedgerSupplier().currentLedger();
         // Propagate the traceId to downstream from current context.
         Integer traceId = Constants.TRACE_ID_CTX_KEY.get();
         System.err.println("MY CURRENT TRACEID: " + traceId);
@@ -44,14 +53,15 @@ public class ClientRpcInterceptor implements ClientInterceptor {
           public void onHeaders(Metadata responseHeader) {
             super.onHeaders(responseHeader);
             long endNanos = ticker.read();
-            updateCriticalPath(ledger, traceId, startNanos, endNanos);
+            updateCriticalPath(ledger, traceId, startNanos, endNanos, responseHeader);
           }
         }, requestHeader);
       }
     };
   }
 
-  private void updateCriticalPath(CriticalPathLedger ledger, Integer traceId, long startNanos, long endNanos) {
+  private void updateCriticalPath(
+      CriticalPathLedger ledger, Integer traceId, long startNanos, long endNanos, Metadata responseHeader) {
     ledger.recordRpcNode();
     long serverTimeSec = Duration.ofNanos(endNanos - startNanos).toSeconds();
     if (serverTimeSec > 0) {
@@ -67,13 +77,11 @@ public class ClientRpcInterceptor implements ClientInterceptor {
       }
     }
 
-//    CriticalPathExtension criticalPathExtension =
-//        ctx.getResponseExtensions()
-//            .get(
-//                CriticalPathExtension.MESSAGE_SET_EXTENSION_FIELD_NUMBER,
-//                CriticalPathExtension.getDefaultInstance());
-//    if (criticalPathExtension != null && criticalPathExtension.hasCostList()) {
-//      ledger.addRemoteCriticalPath(criticalPathExtension.getCostList());
-//    }
+    try {
+      CostList cl = CostList.parseFrom(responseHeader.get(costListKey));
+      ledger.addRemoteCriticalPath(cl);
+    } catch (InvalidProtocolBufferException e) {
+      e.printStackTrace();
+    }
   }
 }

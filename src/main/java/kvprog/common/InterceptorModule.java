@@ -5,7 +5,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import dagger.Module;
 import dagger.Provides;
-import io.grpc.Context;
 import io.grpc.Metadata;
 
 import javax.inject.Qualifier;
@@ -14,6 +13,8 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Module
@@ -29,6 +30,17 @@ public class InterceptorModule {
   @Provides
   static Cache<Integer, Long> provideParallelRpcMonitor() {
     return CacheBuilder.newBuilder().maximumSize(1000).expireAfterWrite(Duration.ofMinutes(1)).build();
+  }
+
+  /**
+   * This is a map from the span or trace id to the critical path for that request.
+   * @return
+   */
+  @Singleton // Shared between all requests.
+  @Provides
+  @CriticalPaths
+  static Map<Integer, CriticalPath> provideCriticalPaths() {
+    return new HashMap<>();
   }
 
   @Singleton // Shared between all requests.
@@ -54,8 +66,22 @@ public class InterceptorModule {
 
   @Singleton
   @Provides
+  @CostListKey
+  Metadata.Key<byte[]> provideCostListKey() {
+    return Metadata.Key.of("cost_list-bin", Metadata.BINARY_BYTE_MARSHALLER);
+  }
+
+  @Singleton
+  @Provides
   Ticker provideTicker() {
     return Ticker.systemTicker();
+  }
+
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface CriticalPaths {
+
   }
 
   @Qualifier
@@ -76,6 +102,13 @@ public class InterceptorModule {
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
   public @interface ElapsedTimeKey {
+
+  }
+
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  public @interface CostListKey {
 
   }
 }

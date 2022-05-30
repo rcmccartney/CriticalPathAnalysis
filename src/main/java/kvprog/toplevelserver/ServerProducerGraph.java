@@ -10,17 +10,13 @@ import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
 import kvprog.*;
 import kvprog.PutReply.Status;
-import kvprog.common.Constants;
-import kvprog.common.CriticalPathComponentMonitor;
-import kvprog.common.ExecutorModule;
-import kvprog.common.MonitorModule;
-
-import javax.inject.Provider;
+import kvprog.common.*;
 import javax.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
+import java.util.Map;
 
 @CallScoped
 @ProductionComponent(
@@ -60,8 +56,9 @@ interface ServerProducerGraph {
         PutRequest request,
         B1Reply b1Reply,
         @Conditional GetReply getReply,
-        HashMap<String, String> cache) {
-      System.err.println("In Put");
+        Map<String, String> cache,
+        Map<Integer, CriticalPath> criticalPaths,
+        CriticalPathSupplier supplier) {
       PutReply reply;
       if (request.getKey().length() > 64 || request.getValue().length() > 512) {
         reply = PutReply.newBuilder().setStatus(Status.SYSTEMERR).build();
@@ -69,6 +66,10 @@ interface ServerProducerGraph {
         cache.put(request.getKey(), request.getValue());
         reply = PutReply.newBuilder().setStatus(Status.SUCCESS).build();
       }
+
+      // TODO: ideally this would be in framework code, not application code.
+      criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
+
       return reply;
     }
 
@@ -90,14 +91,14 @@ interface ServerProducerGraph {
 
     @Produces
     static GetReply get(
-        Provider<CriticalPathComponentMonitor.Factory> factory,
         GetRequest request,
-        HashMap<String, String> cache,
         // TODO: make this conditional.
         B2Reply b2Reply,
         C1Reply c1Reply,
-        C2Reply c2Reply) {
-      System.err.println("In Get");
+        C2Reply c2Reply,
+        Map<String, String> cache,
+        Map<Integer, CriticalPath> criticalPaths,
+        CriticalPathSupplier supplier) {
       GetReply reply;
       if (request.getKey().length() > 64) {
         reply = GetReply.newBuilder().setFailure(GetReply.Status.SYSTEMERR).build();
@@ -106,9 +107,16 @@ interface ServerProducerGraph {
       } else {
         reply = GetReply.newBuilder().setValue(cache.get(request.getKey())).build();
       }
-      System.err.println("Critical path `GET`: " + factory.get().criticalPath());
+
+      // TODO: ideally this would be in framework code, not application code.
+      criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
+
+      System.err.println("In get see: " + supplier.criticalPath());
+
       return reply;
     }
+
+
 
     @Produces
     static ListenableFuture<B1Reply> callB1(BGrpc.BFutureStub stub, PutRequest request) {
@@ -138,7 +146,9 @@ interface ServerProducerGraph {
 
     abstract CGrpc.CFutureStub cStub();
 
-    abstract HashMap<String, String> cache();
+    abstract Map<String, String> cache();
+
+    abstract Map<Integer, CriticalPath> criticalPaths();
 
     abstract GetRequest getRequest();
 
@@ -153,7 +163,9 @@ interface ServerProducerGraph {
 
       abstract Builder setCStub(CGrpc.CFutureStub value);
 
-      abstract Builder setCache(HashMap<String, String> value);
+      abstract Builder setCache(Map<String, String> value);
+
+      abstract Builder setCriticalPaths(Map<Integer, CriticalPath> value);
 
       abstract Builder setGetRequest(GetRequest value);
 

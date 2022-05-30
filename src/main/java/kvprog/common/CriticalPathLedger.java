@@ -19,19 +19,6 @@ public class CriticalPathLedger {
   }
 
   /**
-   * Records a critical path for work delegated by a producer. Producers should call this
-   * immediately after they compute the critical path.
-   *
-   * @param path Critical path computed by client teams (e.g., superroot team) within the work
-   *     delegated by the current producer. All paths passed to this method will be considered
-   *     critical to the producer, so if a producer calls several things in parallel, it is
-   *     responsible for choosing the one that is critical.
-   */
-  public synchronized void addCriticalPath(CostList path) {
-    lists.addCostList(token, path, false);
-  }
-
-  /**
    * Records a critical path for work delegated by a producer from a remote system. Producers should
    * call this immediately after they compute the critical path.
    *

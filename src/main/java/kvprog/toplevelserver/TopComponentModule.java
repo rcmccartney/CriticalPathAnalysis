@@ -7,6 +7,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import kvprog.toplevelserver.ServerApp.ServerComponent;
@@ -29,7 +30,7 @@ class TopComponentModule {
   @Singleton // Shared between all requests.
   @Provides
   @Cache
-  HashMap<String, String> provideCache() {
+  Map<String, String> provideCache() {
     return new HashMap<>();
   }
 

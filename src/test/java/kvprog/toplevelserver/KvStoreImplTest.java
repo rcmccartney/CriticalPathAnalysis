@@ -10,6 +10,7 @@ import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 import kvprog.PutReply.Status;
 import kvprog.bserver.BImpl;
+import kvprog.common.CriticalPath;
 import kvprog.cserver.CImpl;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,21 +50,22 @@ public class KvStoreImplTest {
     String cServerName = InProcessServerBuilder.generateName();
     Multiset<String> calls = ConcurrentHashMultiset.create();
     HashMap<String, String> cache = new HashMap<>();
+    HashMap<Integer, CriticalPath> criticalPaths = new HashMap<>();
 
     // Create a server, add service, start, and register for automatic graceful shutdown.
     grpcCleanup.register(InProcessServerBuilder
-        .forName(cServerName).directExecutor().addService(new CImpl()).build().start());
+        .forName(cServerName).directExecutor().addService(new CImpl(criticalPaths)).build().start());
     ManagedChannel channel = grpcCleanup.register(
         InProcessChannelBuilder.forName(cServerName).directExecutor().build());
     CGrpc.CFutureStub cStub = CGrpc.newFutureStub(channel);
     grpcCleanup.register(InProcessServerBuilder
-        .forName(bServerName).directExecutor().addService(new BImpl(cStub)).build().start());
+        .forName(bServerName).directExecutor().addService(new BImpl(cStub, criticalPaths)).build().start());
     channel = grpcCleanup.register(
         InProcessChannelBuilder.forName(bServerName).directExecutor().build());
     BGrpc.BFutureStub bStub = BGrpc.newFutureStub(channel);
     grpcCleanup.register(InProcessServerBuilder
         .forName(topServerName).directExecutor()
-        .addService(new KvStoreImpl(cache, bStub, cStub)).build().start());
+        .addService(new KvStoreImpl(cache, criticalPaths, bStub, cStub)).build().start());
 
     KvStoreBlockingStub blockingStub = KvStoreGrpc.newBlockingStub(
         // Create a client channel and register for automatic graceful shutdown.

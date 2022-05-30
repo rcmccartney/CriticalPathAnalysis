@@ -7,8 +7,9 @@ import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
 import kvprog.*;
-import kvprog.common.ExecutorModule;
-import kvprog.common.MonitorModule;
+import kvprog.common.*;
+
+import java.util.Map;
 
 @CallScoped
 @ProductionComponent(
@@ -37,14 +38,23 @@ interface BsProducerGraph {
   class BsProducerModule {
 
     @Produces
-    static B1Reply b1(B1Request request, B2Reply reply) {
+    static B1Reply b1(
+        B1Request request,
+        B2Reply reply,
+        Map<Integer, CriticalPath> criticalPaths,
+        CriticalPathSupplier supplier) {
       System.err.println("In B1");
+      criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return B1Reply.getDefaultInstance();
     }
 
     @Produces
-    static B2Reply b2(C1Reply c1Reply) {
+    static B2Reply b2(
+        C1Reply c1Reply,
+        Map<Integer, CriticalPath> criticalPaths,
+        CriticalPathSupplier supplier) {
       System.err.println("In B2");
+      criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return B2Reply.getDefaultInstance();
     }
 
@@ -59,6 +69,8 @@ interface BsProducerGraph {
 
     abstract CGrpc.CFutureStub cStub();
 
+    abstract Map<Integer, CriticalPath> criticalPaths();
+
     abstract B1Request b1Request();
 
     abstract B2Request b2Request();
@@ -69,6 +81,8 @@ interface BsProducerGraph {
       abstract Input autoBuild();
 
       abstract Builder setCStub(CGrpc.CFutureStub value);
+
+      abstract Builder setCriticalPaths(Map<Integer, CriticalPath> value);
 
       abstract Builder setB1Request(B1Request value);
 

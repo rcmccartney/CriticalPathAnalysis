@@ -56,7 +56,7 @@ public abstract class CriticalPath {
 
   public abstract ImmutableList<Node> nodes();
 
-  public final CostList toCostList(long minMicrosecondsToIncludeInLog, boolean addUnattributed) {
+  public final CostList toCostList() {
     CostList.Builder builder = CostList.newBuilder();
     for (Node node : nodes()) {
       addCostElements(builder, node, "/" + node.name());

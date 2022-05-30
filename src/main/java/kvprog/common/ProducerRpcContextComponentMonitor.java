@@ -9,6 +9,8 @@ import javax.inject.Inject;
 
 /**
  * A monitor that sets up and tears down the {@link ProducerRpcContext} for every Producer method.
+ *
+ * TODO: merge with {@code ThreadLocalComponentMonitor}.
  */
 final class ProducerRpcContextComponentMonitor extends ProductionComponentMonitor {
   private final CriticalPathLedgerSupplier criticalPathLedgerSupplier;
