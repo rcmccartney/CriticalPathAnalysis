@@ -116,8 +116,6 @@ interface ServerProducerGraph {
       return reply;
     }
 
-
-
     @Produces
     static ListenableFuture<B1Reply> callB1(BGrpc.BFutureStub stub, PutRequest request) {
       return stub.b1(B1Request.getDefaultInstance());
