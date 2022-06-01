@@ -27,6 +27,13 @@ function display (result) {
     console.log(costELementList);
     const costElement = [];
 
+    for (let i = 0; i < costELementList.length; i++) {
+        var option = document.createElement("option");
+        option.value = i;
+        option.text = "Request-"+ i;
+        document.getElementById("list").appendChild(option);
+    }
+
     var firstElement = costELementList[0];
     for(let i = 0; i < firstElement.length; i++) {
         let index = firstElement[i].getSource().lastIndexOf("/");
@@ -49,39 +56,23 @@ function display (result) {
     var x =  220;
     for(let i = 0; i < firstElement.length-1; i++) {
         var x2 = x+40;
-            d3.select("svg")
+         var line =    d3.select("svg")
                 .append("line")
                 .attr("x1", x)
                 .attr("y1", 300)
                 .attr("x2", x2)
                 .attr("y2", 300)
-                .attr("stroke", "red");
+                .attr("stroke", "red")
+                .attr("text", "eg");
+
+        line.append('text')
+            .attr('class', 'barsEndlineText')
+            .attr('text-anchor', 'middle')
+            .attr("x", 0)
+            .attr("y", ".35em")
+            .text('eg');
         x = x2 + 40;
     }
-
-
-    /*let links = [];
-    // Link from the first node to the second
-    links.push(
-        d3.linkHorizontal()({
-            source: nodes[0],
-            target: nodes[1]
-        })
-    );
-    // Link from the first node to the third
-    links.push(
-        d3.linkHorizontal()({
-            source: nodes[0],
-            target: nodes[2]
-        })
-    );
-    // Append the links to the svg element
-    for (let i = 0; i < links.length; i++) {
-        svg
-            .append('path')
-            .attr('d', links[i])
-            .attr('stroke', 'black')
-            .attr('fill', 'none');*/
 
     return svg.node();
 }
