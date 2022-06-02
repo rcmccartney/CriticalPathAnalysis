@@ -1,16 +1,16 @@
-const {CallsRequest, CallsReply} = require('./kvprog_pb.js');
+const {CallsRequest} = require('./kvprog_pb.js');
 const {KvStoreClient} = require('./kvprog_grpc_web_pb.js');
 import * as d3 from "./d3.min.js"
 
-var client = new KvStoreClient('http://localhost:8080');
-var request = new CallsRequest();
+let client = new KvStoreClient('http://localhost:8080');
+let request = new CallsRequest();
 
 const enableDevTools = window.__GRPCWEB_DEVTOOLS__ || (() => {});
 enableDevTools([
   client,
 ]);
 
-function getCostList() {
+async function getCostList() {
     return new Promise(resolve => {
         client.calls(request, {}, (err, response) => {
                 resolve(response.getCostListList());
@@ -22,16 +22,17 @@ const width = 1000;
 const height = 450;
 const margin = { top: 50, bottom: 50, left: 50, right: 50 };
 
-function display (result) {
+function addToDropdown (result) {
     const costELementList = result.map(element => element.getElementList());
-    console.log(costELementList);
-    const costElement = [];
-
+    const list_element = document.getElementById("list");
+    for (let i=0; i< list_element.length; i++) {
+        list_element.remove(i);
+    }
     for (let i = 0; i < costELementList.length; i++) {
-        var option = document.createElement("option");
+        let option = document.createElement("option");
         option.value = i;
         option.text = "Request-"+ i;
-        document.getElementById("list").appendChild(option);
+        list_element.appendChild(option);
     }
 
    /* var firstElement = costELementList[0];
@@ -73,16 +74,23 @@ function display (result) {
     return svg.node();*/
 }
 
-function showCP() {
-    var x = document.getElementById("list").value;
-    alert(x);
-    document.getElementById("request").innerHTML= "Request-" +x + "is  selected";
-}
-
 async function f1() {
-    var x = await getCostList();
-    display(x);
+    let response = await getCostList();
+    addToDropdown(response);
+    return response;
 }
 
-f1();
+async function protoPrint(response, value) {
+    let requestCostLists = await response;
+    document.getElementById("json").textContent = JSON.stringify(requestCostLists[value].array, undefined, 2);
+}
 
+const dropDown = document.getElementById('list');
+dropDown.addEventListener('click', (event) => {
+    f1();
+});
+
+dropDown.addEventListener('change', (event) => {
+    let response = f1();
+    protoPrint(response, event.target.value);
+});
