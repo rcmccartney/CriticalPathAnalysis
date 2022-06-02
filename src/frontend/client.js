@@ -74,7 +74,6 @@ function display (result) {
 }
 
 function showCP() {
-    console.log("method called");
     var x = document.getElementById("list").value;
     alert(x);
     document.getElementById("request").innerHTML= "Request-" +x + "is  selected";
