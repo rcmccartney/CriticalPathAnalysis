@@ -34,7 +34,7 @@ function display (result) {
         document.getElementById("list").appendChild(option);
     }
 
-    var firstElement = costELementList[0];
+   /* var firstElement = costELementList[0];
     for(let i = 0; i < firstElement.length; i++) {
         let index = firstElement[i].getSource().lastIndexOf("/");
         const cost = firstElement[i].getCostSec();
@@ -54,27 +54,30 @@ function display (result) {
             .style('fill', 'green');
 
     var x =  220;
-    for(let i = 0; i < firstElement.length-1; i++) {
-        var x2 = x+40;
-         var line =    d3.select("svg")
+    for (let i = 0; i < firstElement.length-1; i++) {
+         var x2 = x+40;
+         var line =  d3.select("svg")
                 .append("line")
                 .attr("x1", x)
                 .attr("y1", 300)
                 .attr("x2", x2)
                 .attr("y2", 300)
                 .attr("stroke", "red")
-                .attr("text", "eg");
 
         line.append('text')
             .attr('class', 'barsEndlineText')
             .attr('text-anchor', 'middle')
-            .attr("x", 0)
-            .attr("y", ".35em")
             .text('eg');
         x = x2 + 40;
     }
+    return svg.node();*/
+}
 
-    return svg.node();
+function showCP() {
+    console.log("method called");
+    var x = document.getElementById("list").value;
+    alert(x);
+    document.getElementById("request").innerHTML= "Request-" +x + "is  selected";
 }
 
 async function f1() {
