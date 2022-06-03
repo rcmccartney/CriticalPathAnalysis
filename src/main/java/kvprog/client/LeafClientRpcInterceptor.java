@@ -27,13 +27,11 @@ public class LeafClientRpcInterceptor implements ClientInterceptor {
       @Override
       public void start(Listener<RespT> responseListener, Metadata requestHeader) {
         long startNanos = ticker.read();
-        Stopwatch sw = Stopwatch.createStarted();
         super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
             System.err.println("Leaf client request time from ticker: " + (ticker.read() - startNanos) + " nanos.");
-            System.err.println("Leaf client request time from stopwatch: " + sw.elapsed().getNano() + " nanos.");
             System.err.println("Leaf client sees from metadata: " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
             super.onHeaders(responseHeader);
           }

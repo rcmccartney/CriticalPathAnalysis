@@ -1,13 +1,9 @@
 package kvprog.common;
 
-import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
 import io.grpc.*;
 import io.grpc.ServerCall.Listener;
-import kvprog.common.InterceptorModule.ElapsedTimeKey;
-import kvprog.common.InterceptorModule.TraceId;
-import kvprog.common.InterceptorModule.TraceIdKey;
-import kvprog.common.InterceptorModule.CriticalPaths;
-import kvprog.common.InterceptorModule.CostListKey;
+import kvprog.common.InterceptorModule.*;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -22,6 +18,7 @@ public class ServerRpcInterceptor implements ServerInterceptor {
   private final AtomicInteger traceId;
   private final Metadata.Key<String> traceIdMetadataKey;
   private final Metadata.Key<String> elapsedTimeKey;
+  private final Ticker ticker;
 
   @Inject
   ServerRpcInterceptor(
@@ -29,12 +26,14 @@ public class ServerRpcInterceptor implements ServerInterceptor {
       @CostListKey Metadata.Key<byte[]> costListKey,
       @TraceId AtomicInteger traceId,
       @TraceIdKey Metadata.Key<String> traceIdMetadataKey,
-      @ElapsedTimeKey Metadata.Key<String> elapsedTimeKey) {
+      @ElapsedTimeKey Metadata.Key<String> elapsedTimeKey,
+      Ticker ticker) {
     this.criticalPaths = criticalPaths;
     this.costListKey = costListKey;
     this.traceId = traceId;
     this.traceIdMetadataKey = traceIdMetadataKey;
     this.elapsedTimeKey = elapsedTimeKey;
+    this.ticker = ticker;
   }
 
   @Override
@@ -42,7 +41,8 @@ public class ServerRpcInterceptor implements ServerInterceptor {
       ServerCall<RequestT, ResponseT> call,
       Metadata requestHeaders,
       ServerCallHandler<RequestT, ResponseT> next) {
-    Stopwatch sw = Stopwatch.createStarted();
+    // Stopwatch doesn't work - it only reads on its own process, not the global time elapsed.
+    long startNanos = ticker.read();
     int serverSpan;
     if (requestHeaders.containsKey(traceIdMetadataKey)) {
       // This is a downstream server.
@@ -56,7 +56,7 @@ public class ServerRpcInterceptor implements ServerInterceptor {
         new ForwardingServerCall.SimpleForwardingServerCall<RequestT, ResponseT>(call) {
           @Override
           public void sendHeaders(Metadata responseHeaders) {
-            responseHeaders.put(elapsedTimeKey, Integer.toString(sw.elapsed().getNano()));
+            responseHeaders.put(elapsedTimeKey, Long.toString(ticker.read() - startNanos));
             // If this is from the frontend, we have no critical path to send.
             if (criticalPaths.get(serverSpan) != null) {
               responseHeaders.put(costListKey, criticalPaths.get(serverSpan).toCostList().toByteArray());

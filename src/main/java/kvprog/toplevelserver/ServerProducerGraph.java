@@ -166,6 +166,12 @@ interface ServerProducerGraph {
     @Produces
     @Serial
     static ListenableFuture<C2Reply> callC2InSeries(CGrpc.CFutureStub stub, B2Reply b2Reply, GetRequest request) {
+      // Slow path.
+      try {
+        Thread.sleep(2000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
       return stub.c2(C2Request.getDefaultInstance());
     }
   }

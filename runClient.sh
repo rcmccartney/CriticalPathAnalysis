@@ -14,4 +14,4 @@ read -p "Press enter to send Get:{100}"
 sleep 2
 read -p "Press enter to send Get:{CallC2InSeries}"
 ./build/install/mygrpc/bin/client "CallC2InSeries" &
-sleep 2
+sleep 3
