@@ -45,7 +45,6 @@ public class ClientRpcInterceptor implements ClientInterceptor {
         CriticalPathLedger ledger = ProducerRpcContext.getActiveRpcContext().criticalPathLedgerSupplier().currentLedger();
         // Propagate the traceId to downstream from current context.
         Integer traceId = Constants.TRACE_ID_CTX_KEY.get();
-        System.err.println("MY CURRENT TRACEID: " + traceId);
         requestHeader.put(traceIdMetadataKey, Integer.toString(traceId));
         super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(
             responseListener) {

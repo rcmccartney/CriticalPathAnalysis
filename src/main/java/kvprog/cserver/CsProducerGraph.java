@@ -45,7 +45,6 @@ interface CsProducerGraph {
         C1Request request,
         Map<Integer, CriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
-      System.err.println("In C1");
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return C1Reply.getDefaultInstance();
     }
@@ -56,7 +55,6 @@ interface CsProducerGraph {
         C2Request c2Request,
         Map<Integer, CriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
-      System.err.println("In C2");
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return C2Reply.getDefaultInstance();
     }

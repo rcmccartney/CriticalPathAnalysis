@@ -1,14 +1,20 @@
 package kvprog.bserver;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import dagger.grpc.server.CallScoped;
+import dagger.producers.Producer;
 import dagger.producers.ProducerModule;
 import dagger.producers.Produces;
 import dagger.producers.ProductionComponent;
 import kvprog.*;
 import kvprog.common.*;
 
+import javax.inject.Qualifier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 
 @CallScoped
@@ -34,6 +40,13 @@ interface BsProducerGraph {
 
   ListenableFuture<B2Reply> b2();
 
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface Conditional {
+
+  }
+
   @ProducerModule
   class BsProducerModule {
 
@@ -43,19 +56,27 @@ interface BsProducerGraph {
         B2Reply reply,
         Map<Integer, CriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
-      System.err.println("In B1");
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return B1Reply.getDefaultInstance();
     }
 
     @Produces
     static B2Reply b2(
-        C1Reply c1Reply,
+        @Conditional C1Reply c1Reply,
         Map<Integer, CriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
-      System.err.println("In B2");
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return B2Reply.getDefaultInstance();
+    }
+
+    @Produces
+    @Conditional
+    static ListenableFuture<C1Reply> internalB2(B2Request request, Producer<C1Reply> c1Reply) {
+      if (request.getCallC()) {
+        return c1Reply.get();
+      } else {
+        return Futures.immediateFuture(C1Reply.getDefaultInstance());
+      }
     }
 
     @Produces

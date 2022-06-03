@@ -119,7 +119,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       int index = executionOrder.size() - 1;
       // There is no useful information from unstarted nodes, so we skip them.
       while (index > 0 && getProducerMonitor(executionOrder.get(index)).startTimeUsec() == 0) {
-        System.err.println("Skipping unstarted node: " + getProducerMonitor(executionOrder.get(index)));
+        logger.info("Skipping unstarted node: " + getProducerMonitor(executionOrder.get(index)));
         index--;
       }
       ComponentProducerToken sink = executionOrder.get(index);
@@ -129,7 +129,6 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
               .filter(childCostLists::isRpcNode)
               .sorted(Comparator.comparingLong(cpt -> getProducerMonitor(cpt).endTimeUsec()))
               .collect(ImmutableList.toImmutableList());
-      System.err.println("rpcCompletionOrder: " + rpcCompletionOrder);
 
       return CriticalPath.create(
           CriticalPath.Node.create(

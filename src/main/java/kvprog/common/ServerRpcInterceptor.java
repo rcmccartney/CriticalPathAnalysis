@@ -47,12 +47,9 @@ public class ServerRpcInterceptor implements ServerInterceptor {
     if (requestHeaders.containsKey(traceIdMetadataKey)) {
       // This is a downstream server.
       serverSpan = Integer.parseInt(requestHeaders.get(traceIdMetadataKey));
-      System.err.println("I'm downstream with span: " + serverSpan);
     } else {
       serverSpan = traceId.incrementAndGet();
-      System.err.println("We're a top level server!");
     }
-    System.err.println("Setting context with span: " + serverSpan);
     Context ctx = Context.current().withValue(Constants.TRACE_ID_CTX_KEY, serverSpan);
     return Contexts.interceptCall(
         ctx,

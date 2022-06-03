@@ -20,18 +20,18 @@ public class TopLevelServer {
 
   void start() throws IOException {
     server.start();
-    logger.info("Server started, listening on " + server.getPort());
+    logger.info("Top level server started, listening on " + server.getPort());
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
         // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-        System.err.println("*** shutting down gRPC server since JVM is shutting down");
+        System.err.println("*** Top level shutting down gRPC server since JVM is shutting down");
         try {
           TopLevelServer.this.stop();
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
         }
-        System.err.println("*** server shut down ***");
+        System.err.println("*** Top level server shut down ***");
       }
     });
 

@@ -25,7 +25,7 @@ public class LeafClientRpcInterceptor implements ClientInterceptor {
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
-            System.err.println("Leaf client sees: " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
+            System.err.println("Leaf client sees request elapsed with " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
             super.onHeaders(responseHeader);
           }
         }, requestHeader);

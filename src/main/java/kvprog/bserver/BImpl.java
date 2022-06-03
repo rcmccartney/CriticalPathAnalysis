@@ -38,7 +38,7 @@ public class BImpl extends BImplBase {
           .setCStub(stub)
           .setCriticalPaths(criticalPaths)
           .setB1Request(req)
-          .setB2Request(B2Request.getDefaultInstance())
+          .setB2Request(B2Request.newBuilder().setCallC(false).build())
           .build();
       try {
         responseObserver.onNext(producers.b1().get());

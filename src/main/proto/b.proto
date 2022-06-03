@@ -14,6 +14,8 @@ message B1Request {}
 
 message B1Reply {}
 
-message B2Request {}
+message B2Request {
+  bool call_c = 1;
+}
 
 message B2Reply {}

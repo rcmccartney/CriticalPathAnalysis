@@ -69,7 +69,6 @@ interface ServerProducerGraph {
 
       // TODO: ideally this would be in framework code, not application code.
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
-
       return reply;
     }
 
@@ -110,9 +109,6 @@ interface ServerProducerGraph {
 
       // TODO: ideally this would be in framework code, not application code.
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
-
-      System.err.println("In get see: " + supplier.criticalPath());
-
       return reply;
     }
 
@@ -123,7 +119,7 @@ interface ServerProducerGraph {
 
     @Produces
     static ListenableFuture<B2Reply> callB2(BGrpc.BFutureStub stub, GetRequest request) {
-      return stub.b2(B2Request.getDefaultInstance());
+      return stub.b2(B2Request.newBuilder().setCallC(true).build());
     }
 
     @Produces
