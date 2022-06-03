@@ -1,20 +1,22 @@
 package kvprog.common;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.util.concurrent.AtomicLongMap;
 import dagger.grpc.server.CallScoped;
+import kvprog.CostList;
+
+import javax.inject.Inject;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import kvprog.CostList;
+
+import static com.google.common.collect.ImmutableList.toImmutableList;
 
 /**
  * A class to store all child critical paths and their root producer for a request. This must be a
@@ -28,18 +30,10 @@ public final class ChildCostLists {
   private final Set<ComponentProducerToken> tokensWithRpcs = new HashSet<>();
   private final ImmutableListMultimap.Builder<ComponentProducerToken, ChildCostList> costListsBuilder =
       ImmutableListMultimap.builder();
-  private final AtomicLongMap<ComponentProducerToken> remoteRpcUsecMap = AtomicLongMap.create();
+  private final AtomicLongMap<ComponentProducerToken> remoteRpcNanosMap = AtomicLongMap.create();
 
   @Inject
   public ChildCostLists() {
-  }
-
-  private static double usecToSec(long usec) {
-    return usec / 1e6;
-  }
-
-  private static long secToUsec(double sec) {
-    return Math.round(sec * 1e6);
   }
 
   public synchronized void addCostList(
@@ -48,12 +42,12 @@ public final class ChildCostLists {
     costListsBuilder.put(token, ChildCostList.create(childCostList, remote));
   }
 
-  public synchronized void addParallelRemoteRpcSeconds(ComponentProducerToken token, double seconds) {
-    remoteRpcUsecMap.getAndUpdate(token, oldValue -> Math.max(oldValue, secToUsec(seconds)));
+  public synchronized void addParallelRemoteRpcDuration(ComponentProducerToken token, Duration duration) {
+    remoteRpcNanosMap.getAndUpdate(token, oldValue -> Math.max(oldValue, duration.toNanos()));
   }
 
-  public synchronized void addRemoteRpcSeconds(ComponentProducerToken token, double seconds) {
-    remoteRpcUsecMap.getAndAdd(token, secToUsec(seconds));
+  public synchronized void addRemoteRpcDuration(ComponentProducerToken token, Duration duration) {
+    remoteRpcNanosMap.getAndAdd(token, duration.toNanos());
   }
 
   /**
@@ -71,7 +65,7 @@ public final class ChildCostLists {
   }
 
   public synchronized ImmutableListMultimap<ComponentProducerToken, CostList> costLists() {
-    if (remoteRpcUsecMap.isEmpty()) {
+    if (remoteRpcNanosMap.isEmpty()) {
       return ImmutableListMultimap.copyOf(
           Multimaps.transformValues(costListsBuilder.build(), ChildCostList::costList));
     }
@@ -86,10 +80,10 @@ public final class ChildCostLists {
     }
 
     // Add a new cost list for all tokens that do not have any attributed time.
-    for (Map.Entry<ComponentProducerToken, Long> entry : remoteRpcUsecMap.asMap().entrySet()) {
+    for (Map.Entry<ComponentProducerToken, Long> entry : remoteRpcNanosMap.asMap().entrySet()) {
       if (!tokensWithAttributedRemoteRpcTime.contains(entry.getKey())) {
         costListsWithRemoteBuilder.put(
-            entry.getKey(), createCostListWithRemoteRpcSeconds(entry.getValue()));
+            entry.getKey(), createCostListWithRemoteRpcDuration(Duration.ofNanos(entry.getValue())));
       }
     }
     return costListsWithRemoteBuilder.build();
@@ -101,9 +95,9 @@ public final class ChildCostLists {
   // Any given producer may have issued zero or more RPCs, of which none, some, or all may have
   // returned CostLists.  This function ensures that the total latency of the remote CostLists
   // is greater than or equal to the total RPC time in the producer, as recorded in
-  // {@code remoteRpcUsecMap}, by padding it out if necessary.
+  // {@code remoteRpcNanosMap}, by padding it out if necessary.
   //
-  // TODO(b/190277126): Consider merging these return values into a single CostList.
+  // TODO: Consider merging these return values into a single CostList.
   private ImmutableList<CostList> createCostLists(
       ComponentProducerToken token, Collection<ChildCostList> childCostLists) {
     if (childCostLists.isEmpty()) {
@@ -112,30 +106,30 @@ public final class ChildCostLists {
 
     // If the total RPC time is not known, we have no choice but to trust the childCostLists.
     // Return them as they are.
-    Long remoteRpcUsec = remoteRpcUsecMap.get(token);
-    if (remoteRpcUsec == null) {
+    Long remoteRpcNanos = remoteRpcNanosMap.get(token);
+    if (remoteRpcNanos == null) {
       return childCostLists.stream().map(p -> p.costList()).collect(toImmutableList());
     }
 
     // Sum up the total time in all the remote childCostLists, and compare it to the total RPC time.
-    long attributedUsec = 0;
+    long attributedNanos = 0;
     for (ChildCostList costList : childCostLists) {
       if (costList.remote()) {
-        attributedUsec +=
+        attributedNanos +=
             costList.costList().getElementList().stream()
-                .mapToLong(e -> secToUsec(e.getCostSec()))
+                .mapToLong(e -> Constants.secToNanos(e.getCostSec()))
                 .sum();
       }
     }
-    long unattributedRpcUsec = remoteRpcUsec - attributedUsec;
+    long unattributedRpcNanos = remoteRpcNanos - attributedNanos;
 
     // If the total RPC time exceeds the total time in the childCostLists, there were some RPCs
     // that did not return CostLists, or there was some overhead in the RPC itself, or both. Add
     // that unaccounted time in a new CostList.
-    if (unattributedRpcUsec > 0) {
+    if (unattributedRpcNanos > 0) {
       return Stream.concat(
               childCostLists.stream().map(p -> p.costList()),
-              Stream.of(createCostListWithRemoteRpcSeconds(unattributedRpcUsec)))
+              Stream.of(createCostListWithRemoteRpcDuration(Duration.ofNanos(unattributedRpcNanos))))
           .collect(toImmutableList());
     }
 
@@ -156,15 +150,15 @@ public final class ChildCostLists {
     // Right now, we don't have any signals to distinguish those various cases, so we are assuming
     // the RPCs were sequential.  That is the longstanding behavior, and likely the common case.
     //
-    // TODO(b/190277126): Add signals that help distinguish those cases, and handle them here.
+    // TODO: Add signals that help distinguish those cases, and handle them here.
     return childCostLists.stream().map(p -> p.costList()).collect(toImmutableList());
   }
 
-  private CostList createCostListWithRemoteRpcSeconds(long serverElapsedUsec) {
+  private CostList createCostListWithRemoteRpcDuration(Duration serverElapsedTime) {
     CostList.Builder costListWithRemoteBuilder = CostList.newBuilder();
     costListWithRemoteBuilder
         .addElementBuilder()
-        .setCostSec(usecToSec(serverElapsedUsec))
+        .setCostSec(Constants.durationToSec(serverElapsedTime))
         .setSource(REMOTE);
     return costListWithRemoteBuilder.build();
   }

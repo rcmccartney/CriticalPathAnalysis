@@ -62,13 +62,13 @@ public class ClientRpcInterceptor implements ClientInterceptor {
   private void updateCriticalPath(
       CriticalPathLedger ledger, Integer traceId, long startNanos, long endNanos, Metadata responseHeader) {
     ledger.recordRpcNode();
-    double serverTimeSec = (endNanos - startNanos) / 1000000000.0;
-    if (serverTimeSec > 0.0) {
+    Duration serverTime = Duration.ofNanos(endNanos - startNanos);
+    if (!serverTime.isZero()) {
       Long priorEndTimeNanos = parallelRpcMonitor.getIfPresent(traceId);
       if (priorEndTimeNanos != null && startNanos < priorEndTimeNanos) {
-        ledger.addParallelRemoteRpcTimeCriticalPath(serverTimeSec);
+        ledger.addParallelRemoteRpcTimeCriticalPath(serverTime);
       } else {
-        ledger.addRemoteRpcTimeCriticalPath(serverTimeSec);
+        ledger.addRemoteRpcTimeCriticalPath(serverTime);
       }
 
       if (priorEndTimeNanos == null || priorEndTimeNanos < endNanos) {

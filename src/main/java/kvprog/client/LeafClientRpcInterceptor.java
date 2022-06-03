@@ -6,7 +6,7 @@ import io.grpc.*;
 import kvprog.common.InterceptorModule;
 
 import javax.inject.Inject;
-import java.time.Duration;
+
 
 public class LeafClientRpcInterceptor implements ClientInterceptor {
   private final Metadata.Key<String> elapsedTimeKey;
@@ -32,7 +32,7 @@ public class LeafClientRpcInterceptor implements ClientInterceptor {
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
-            System.err.println("Leaf client request time from ticker: " + (ticker.read() - startNanos)  + " nanos.");
+            System.err.println("Leaf client request time from ticker: " + (ticker.read() - startNanos) + " nanos.");
             System.err.println("Leaf client request time from stopwatch: " + sw.elapsed().getNano() + " nanos.");
             System.err.println("Leaf client sees from metadata: " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
             super.onHeaders(responseHeader);

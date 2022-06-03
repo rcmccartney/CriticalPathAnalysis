@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableList;
 import kvprog.CostElement;
 import kvprog.CostList;
 
+import java.time.Duration;
+
 /**
  * Represents a critical path where each node has a unique name.
  */
@@ -42,16 +44,12 @@ public abstract class CriticalPath {
   /**
    * Utility for constructing a single element of a critical path.
    */
-  public static CostElement newCostElement(String source, double costSec) {
-    return CostElement.newBuilder().setSource(source).setCostSec(costSec).build();
+  public static CostElement newCostElement(String source, Duration cost) {
+    return CostElement.newBuilder().setSource(source).setCostSec(Constants.durationToSec(cost)).build();
   }
 
-  private static double usecToSec(long usec) {
-    return usec / 1e6;
-  }
-
-  private static long secToUsec(double sec) {
-    return Math.round(sec * 1e6);
+  public static CostElement newCostElementFromSeconds(String source, double costSeconds) {
+    return CostElement.newBuilder().setSource(source).setCostSec(costSeconds).build();
   }
 
   public abstract ImmutableList<Node> nodes();
@@ -69,29 +67,27 @@ public abstract class CriticalPath {
    * Recursively adds cost elements to the builder.
    *
    * @param builder the proto builder where cost elements will be added
-   * @param node a cost elements for this node and its children
-   * @param prefix added nodes should be added as slash-delimited children of this prefix.
+   * @param node    a cost elements for this node and its children
+   * @param prefix  added nodes should be added as slash-delimited children of this prefix.
    */
   private void addCostElements(
       CostList.Builder builder,
       Node node,
       String prefix) {
-    long nodeCpuUsec = node.cpuUsec();
-    double selfCostSecs = usecToSec(nodeCpuUsec);
     // Add CostElement for node.
-    builder.addElement(newCostElement(prefix, selfCostSecs));
+    builder.addElement(newCostElement(prefix, node.cpu()));
 
-    // Recursively add CostElements for node's child critical path at GWS level.
-    long latencyUsec = 0;
+    // Recursively add CostElements for node's child critical path.
+    Duration totalLatency = Duration.ofNanos(0);
     for (Node childNode : node.childCriticalPath().nodes()) {
       addCostElements(
           builder,
           childNode,
           String.format("%s/%s", prefix, childNode.name()));
-      latencyUsec += childNode.latencyUsec();
+      totalLatency.plus(childNode.latency());
     }
 
-    // Add CostElements for node's child critical path at levels below GWS.
+    // Add CostElements for node's child critical paths.
     for (CostList childCostList : node.childCostLists()) {
       for (CostElement childCostElement : childCostList.getElementList()) {
         String childSource = childCostElement.getSource();
@@ -101,8 +97,8 @@ public abstract class CriticalPath {
                 : String.format("%s/%s", prefix, childSource);
         // filtering of small elements from backend reports will be done in those backends,
         // so that we can get reporting at the root of each backend for small element filtering.
-        builder.addElement(newCostElement(newChildSource, childCostElement.getCostSec()));
-        latencyUsec += secToUsec(childCostElement.getCostSec());
+        builder.addElement(newCostElementFromSeconds(newChildSource, childCostElement.getCostSec()));
+        totalLatency.plus(Constants.secToDuration(childCostElement.getCostSec()));
       }
     }
   }
@@ -137,60 +133,7 @@ public abstract class CriticalPath {
   public abstract static class Node {
 
     public static Builder builder() {
-      return new AutoValue_CriticalPath_Node.Builder()
-          .childCostLists(ImmutableList.of())
-          .childCriticalPath(CriticalPath.empty());
-    }
-
-    /**
-     * Creates a new node.
-     */
-    public static Node create(String name, long cpuUsec, long latencyUsec) {
-      return builder().name(name).cpuUsec(cpuUsec).latencyUsec(latencyUsec).build();
-    }
-
-    /**
-     * Creates a new node.
-     */
-    public static Node create(
-        String name, long cpuUsec, long latencyUsec, CriticalPath childCriticalPath) {
-      return builder()
-          .name(name)
-          .cpuUsec(cpuUsec)
-          .latencyUsec(latencyUsec)
-          .childCriticalPath(childCriticalPath)
-          .build();
-    }
-
-    /**
-     * Creates a new node.
-     */
-    public static Node create(
-        String name, long cpuUsec, long latencyUsec, ImmutableList<CostList> childCostLists) {
-      return builder()
-          .name(name)
-          .cpuUsec(cpuUsec)
-          .latencyUsec(latencyUsec)
-          .childCostLists(childCostLists)
-          .build();
-    }
-
-    /**
-     * Creates a new node.
-     */
-    public static Node create(
-        String name,
-        long cpuUsec,
-        long latencyUsec,
-        CriticalPath childCriticalPath,
-        ImmutableList<CostList> childCostLists) {
-      return builder()
-          .name(name)
-          .cpuUsec(cpuUsec)
-          .latencyUsec(latencyUsec)
-          .childCriticalPath(childCriticalPath)
-          .childCostLists(childCostLists)
-          .build();
+      return new AutoValue_CriticalPath_Node.Builder().childCriticalPath(CriticalPath.empty()).childCostLists(ImmutableList.of());
     }
 
     /**
@@ -199,14 +142,14 @@ public abstract class CriticalPath {
     public abstract String name();
 
     /**
-     * Returns the node's CPU time in microseconds.
+     * Returns the node's CPU time.
      */
-    public abstract long cpuUsec();
+    public abstract Duration cpu();
 
     /**
-     * Returns the node's latency in microseconds.
+     * Returns the node's latency.
      */
-    public abstract long latencyUsec();
+    public abstract Duration latency();
 
     /**
      * Child critical path for computations internal to the server.
@@ -219,17 +162,14 @@ public abstract class CriticalPath {
      */
     public abstract ImmutableList<CostList> childCostLists();
 
-    /**
-     * Builder for Node
-     */
     @AutoValue.Builder
     public abstract static class Builder {
 
       public abstract Builder name(String value);
 
-      public abstract Builder cpuUsec(long value);
+      public abstract Builder cpu(Duration value);
 
-      public abstract Builder latencyUsec(long value);
+      public abstract Builder latency(Duration value);
 
       public abstract Builder childCriticalPath(CriticalPath value);
 

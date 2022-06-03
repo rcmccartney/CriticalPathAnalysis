@@ -13,6 +13,7 @@ import kvprog.cserver.CServer;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.time.Duration;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -118,7 +119,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
 
       int index = executionOrder.size() - 1;
       // There is no useful information from unstarted nodes, so we skip them.
-      while (index > 0 && getProducerMonitor(executionOrder.get(index)).startTimeUsec() == 0) {
+      while (index > 0 && getProducerMonitor(executionOrder.get(index)).startTimeNanos() == 0) {
         logger.info("Skipping unstarted node: " + getProducerMonitor(executionOrder.get(index)));
         index--;
       }
@@ -127,18 +128,18 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       ImmutableList<ComponentProducerToken> rpcCompletionOrder =
           executionOrder.subList(0, index).stream()
               .filter(childCostLists::isRpcNode)
-              .sorted(Comparator.comparingLong(cpt -> getProducerMonitor(cpt).endTimeUsec()))
+              .sorted(Comparator.comparingLong(cpt -> getProducerMonitor(cpt).endTimeNanos()))
               .collect(ImmutableList.toImmutableList());
 
       return CriticalPath.create(
-          CriticalPath.Node.create(
-              sink.componentName(),
-              0,
+          CriticalPath.Node.builder()
+              .name(sink.componentName())
+              .cpu(Duration.ofNanos(0))
               // If this is called in the sink, endTime will be now().
-              getProducerMonitor(sink).endTimeUsec(),
-              buildCriticalPathFromSink(
-                  sink, index, rpcCompletionOrder, executionOrder, childCostLists)
-                  .build()));
+              .latency(Duration.ofNanos(getProducerMonitor(sink).endTimeNanos()))
+              .childCriticalPath(buildCriticalPathFromSink(
+                  sink, index, rpcCompletionOrder, executionOrder, childCostLists))
+              .build());
     }
 
     /**
@@ -147,7 +148,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      * started immediately prior to the current node or adding the most recently initiated RPC node
      * to the critical path. Make this decision using by minimizing the estimated slack time.
      */
-    private CriticalPath.Builder buildCriticalPathFromSink(
+    private CriticalPath buildCriticalPathFromSink(
         ComponentProducerToken sink,
         int index,
         ImmutableList<ComponentProducerToken> rpcCompletionOrder,
@@ -160,7 +161,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
 
       int rpcIndex = rpcCompletionOrder.size() - 1;
       // Compute critical path.
-      long criticalPathStartTimeUsec = getProducerMonitor(sink).startTimeUsec();
+      long criticalPathStartTimeNanos = getProducerMonitor(sink).startTimeNanos();
       while (index > 0) {
         currentCriticalProducer = executionOrder.get(--index);
         CriticalPathProducerMonitor pr = getProducerMonitor(currentCriticalProducer);
@@ -168,14 +169,14 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
         // Choose between the previously executed node and the RPC
         // node whose end time is nearest, but prior to, the current
         // critical path start time.
-        long cpuSlack = criticalPathStartTimeUsec - (pr.startTimeUsec() + pr.cpuUsec());
+        long cpuSlack = criticalPathStartTimeNanos - (pr.startTimeNanos() + pr.cpuNanos());
         long rpcSlack = Long.MAX_VALUE;
         ComponentProducerToken rpcToken = null;
         while (rpcIndex >= 0) {
           rpcToken = rpcCompletionOrder.get(rpcIndex);
           CriticalPathProducerMonitor newPr = getProducerMonitor(rpcToken);
-          if (newPr.endTimeUsec() <= criticalPathStartTimeUsec) {
-            rpcSlack = criticalPathStartTimeUsec - newPr.endTimeUsec();
+          if (newPr.endTimeNanos() <= criticalPathStartTimeNanos) {
+            rpcSlack = criticalPathStartTimeNanos - newPr.endTimeNanos();
             break;
           }
           rpcIndex--;
@@ -188,7 +189,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
           currentCriticalProducer = executionOrder.get(index);
           pr = getProducerMonitor(currentCriticalProducer);
         }
-        criticalPathStartTimeUsec = pr.startTimeUsec();
+        criticalPathStartTimeNanos = pr.startTimeNanos();
         criticalPath.add(currentCriticalProducer);
       }
 
@@ -198,13 +199,13 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       // child in the path. If there is a gap between the end time of
       // the current node and the start time of the next node, we add
       // that to a special framework latency symbol.
-      long frameworkLatencyUsec = 0;
+      long frameworkLatencyNanos = 0;
       CriticalPathProducerMonitor currentRecorder = null;
       CriticalPathProducerMonitor previousRecorder = null;
       ImmutableListMultimap<ComponentProducerToken, CostList> tokenToCostList =
           childCostLists.costLists();
       for (ComponentProducerToken token : criticalPath) {
-        long latencyUsec;
+        long latencyNanos;
         currentRecorder = getProducerMonitor(token);
         ImmutableList<CostList> costLists =
             tokenToCostList.entries().stream()
@@ -213,57 +214,61 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
                 .collect(ImmutableList.toImmutableList());
 
         if (previousRecorder == null) {
-          latencyUsec = currentRecorder.latencyUsec();
+          latencyNanos = currentRecorder.latencyNanos();
         } else {
-          long endTimeUsec =
-              Math.min(previousRecorder.startTimeUsec(), currentRecorder.endTimeUsec());
-          latencyUsec = Math.max(0, endTimeUsec - currentRecorder.startTimeUsec());
+          long endTimeNanos =
+              Math.min(previousRecorder.startTimeNanos(), currentRecorder.endTimeNanos());
+          latencyNanos = Math.max(0, endTimeNanos - currentRecorder.startTimeNanos());
           // If current node is a RPC node and its end time is later than the start time of
           // previous(backward) node, then this RPC node is picked on CPU finish time basis.
           boolean isRpcNodePickedByCpuSlack =
               childCostLists.isRpcNode(token)
-                  && currentRecorder.endTimeUsec() > previousRecorder.startTimeUsec();
+                  && currentRecorder.endTimeNanos() > previousRecorder.startTimeNanos();
           if (isRpcNodePickedByCpuSlack) {
             // Introduce a child element to account for a portion of current rpc node's RPC time.
             // It's a gap between current rpc node's CPU finish time and the start time of the
             // previous(backward) node and it will replace the rpc node's original child elements.
-            long rpcGapUsec =
-                previousRecorder.startTimeUsec()
-                    - (currentRecorder.startTimeUsec() + currentRecorder.cpuUsec());
+            long rpcGapNanos =
+                previousRecorder.startTimeNanos()
+                    - (currentRecorder.startTimeNanos() + currentRecorder.cpuNanos());
             costLists =
-                rpcGapUsec > 0
-                    ? childCostListsFromLatencyUsec("rpc-gap", rpcGapUsec)
+                rpcGapNanos > 0
+                    ? childCostListsFromLatencyNanos("rpc-gap", rpcGapNanos)
                     : ImmutableList.of();
           }
-          frameworkLatencyUsec += previousRecorder.startTimeUsec() - endTimeUsec;
+          frameworkLatencyNanos += previousRecorder.startTimeNanos() - endTimeNanos;
         }
-        builder.addNode(criticalPathNodeFromProducer(costLists, token, latencyUsec));
+        builder.addNode(criticalPathNodeFromProducer(costLists, token, latencyNanos));
         previousRecorder = currentRecorder;
       }
-      if (frameworkLatencyUsec > 0) {
+      if (frameworkLatencyNanos > 0) {
         builder.addNode(
-            CriticalPath.Node.create(
-                "<framework>", frameworkLatencyUsec, frameworkLatencyUsec, ImmutableList.of()));
+            CriticalPath.Node.builder()
+                .name(
+                "<framework>")
+                .cpu(Duration.ofNanos(frameworkLatencyNanos))
+                .latency(Duration.ofNanos(frameworkLatencyNanos))
+                .build());
       }
 
-      return builder;
+      return builder.build();
     }
 
     private CriticalPath.Node criticalPathNodeFromProducer(
-        ImmutableList<CostList> childCostLists, ComponentProducerToken producer, long latencyUsec) {
+        ImmutableList<CostList> childCostLists, ComponentProducerToken producer, long latencyNanos) {
       CriticalPathProducerMonitor producerRecorder = getProducerMonitor(producer);
       return CriticalPath.Node.builder()
           .name(Namer.producerName(producer.producerToken()))
-          .cpuUsec(Math.min(latencyUsec, producerRecorder.cpuUsec()))
-          .latencyUsec(latencyUsec)
+          .cpu(Duration.ofNanos(Math.min(latencyNanos, producerRecorder.cpuNanos())))
+          .latency(Duration.ofNanos(latencyNanos))
           .childCostLists(childCostLists)
           .build();
     }
 
-    private ImmutableList<CostList> childCostListsFromLatencyUsec(
-        String nodeName, long lantencyUsec) {
+    private ImmutableList<CostList> childCostListsFromLatencyNanos(
+        String nodeName, long latencyNanos) {
       CostList.Builder builder = CostList.newBuilder();
-      builder.addElement(CriticalPath.newCostElement("/" + nodeName, lantencyUsec / 1e6));
+      builder.addElement(CriticalPath.newCostElement("/" + nodeName, Duration.ofNanos(latencyNanos)));
       return ImmutableList.of(builder.build());
     }
   }
@@ -309,33 +314,29 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       endTimeNanos = ticker.read();
     }
 
-    long startTimeUsec() {
+    long startTimeNanos() {
       if (startTimeNanos == -1) {
         logger.info("Missing startTimeNanos on Token: " + producerToken);
         return 0L;
       }
-      return startTimeNanos / 1000;
+      return startTimeNanos;
     }
 
-    long cpuUsec() {
+    long cpuNanos() {
       if (durationNanos == -1) {
         // This can happen if you request critical path info within a Producer.
         logger.info("Missing duration on Token: " + producerToken + ". Assuming now().");
         durationNanos = ticker.read() - startTimeNanos;
       }
-      return durationNanos / 1000;
+      return durationNanos;
     }
 
-    long endTimeUsec() {
-      return endTimeNanos() / 1000;
-    }
-
-    long latencyUsec() {
+    long latencyNanos() {
       if (startTimeNanos == -1) {
         logger.info("Missing startTimeNanos on Token: " + producerToken);
         return 0L;
       }
-      return (endTimeNanos() - startTimeNanos) / 1000;
+      return endTimeNanos() - startTimeNanos;
     }
 
     private long endTimeNanos() {

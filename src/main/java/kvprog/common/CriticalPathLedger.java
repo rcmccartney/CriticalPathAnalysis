@@ -3,6 +3,7 @@ package kvprog.common;
 import kvprog.CostList;
 
 import javax.annotation.concurrent.ThreadSafe;
+import java.time.Duration;
 
 /**
  * A ledger that accumulates critical paths within a producer's scope. Use {@link CriticalPathLedgerSupplier}
@@ -22,10 +23,10 @@ public class CriticalPathLedger {
    * Records a critical path for work delegated by a producer from a remote system. Producers should
    * call this immediately after they compute the critical path.
    *
-   * @param path Critical path computed by client teams (e.g., superroot team) within the work
-   *     delegated by the current producer. All paths passed to this method will be considered
-   *     critical to the producer, so if a producer calls several things in parallel, it is
-   *     responsible for choosing the one that is critical.
+   * @param path Critical path computed by client teams within the work
+   *             delegated by the current producer. All paths passed to this method will be considered
+   *             critical to the producer, so if a producer calls several things in parallel, it is
+   *             responsible for choosing the one that is critical.
    */
   public synchronized void addRemoteCriticalPath(CostList path) {
     lists.addCostList(token, path, true);
@@ -36,8 +37,8 @@ public class CriticalPathLedger {
    * Records a critical path with a single element containing the total amount of remote server time
    * for an RPC sent to a remote system. Total remote time will be the maximum of all calls.
    */
-  public synchronized void addParallelRemoteRpcTimeCriticalPath(double seconds) {
-    lists.addParallelRemoteRpcSeconds(token, seconds);
+  public synchronized void addParallelRemoteRpcTimeCriticalPath(Duration time) {
+    lists.addParallelRemoteRpcDuration(token, time);
     recordRpcNode();
   }
 
@@ -45,12 +46,14 @@ public class CriticalPathLedger {
    * Records a critical path with a single element containing the total amount of remote server time
    * for an RPC sent to a remote system. Total remote time will be the sum of all calls.
    */
-  public synchronized void addRemoteRpcTimeCriticalPath(double seconds) {
-    lists.addRemoteRpcSeconds(token, seconds);
+  public synchronized void addRemoteRpcTimeCriticalPath(Duration time) {
+    lists.addRemoteRpcDuration(token, time);
     recordRpcNode();
   }
 
-  /** Records that this producer node issued an RPC. */
+  /**
+   * Records that this producer node issued an RPC.
+   */
   public synchronized void recordRpcNode() {
     lists.recordRpcNode(token);
   }
