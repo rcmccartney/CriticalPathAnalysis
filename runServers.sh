@@ -1,11 +1,5 @@
 #!/bin/bash
 
-./runCleanup.sh
-./runBackendBuild.sh
-./runFrontendBuild.sh
-sleep 1
-read -p "Press enter to continue"
-
 echo "************************"
 echo "* Run top level server"
 echo "************************"
@@ -36,11 +30,16 @@ pushd frontend
 python3 -m http.server 8081 &
 httpPID=$!
 sleep 1
-read -p "Open http://localhost:8081. Press enter to continue"
 popd
 popd
 
-./runClient.sh
+
+echo "**********************************"
+echo "* Frontend & backend now running"
+echo "**********************************"
+echo "Open http://localhost:8081."
+echo "You can now use runClient.sh to generate load, or send any request of your choosing."
+read -p "Press enter to end servers."
 
 echo "*****************"
 echo "* Ending servers"
