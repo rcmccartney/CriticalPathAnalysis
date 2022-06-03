@@ -1,16 +1,21 @@
 package kvprog.client;
 
+import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
 import io.grpc.*;
 import kvprog.common.InterceptorModule;
 
 import javax.inject.Inject;
+import java.time.Duration;
 
 public class LeafClientRpcInterceptor implements ClientInterceptor {
   private final Metadata.Key<String> elapsedTimeKey;
+  private final Ticker ticker;
 
   @Inject
-  LeafClientRpcInterceptor(@InterceptorModule.ElapsedTimeKey Metadata.Key<String> elapsedTimeKey) {
+  LeafClientRpcInterceptor(@InterceptorModule.ElapsedTimeKey Metadata.Key<String> elapsedTimeKey, Ticker ticker) {
     this.elapsedTimeKey = elapsedTimeKey;
+    this.ticker = ticker;
   }
 
   public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
@@ -21,11 +26,15 @@ public class LeafClientRpcInterceptor implements ClientInterceptor {
         channel.newCall(methodDescriptor, callOptions)) {
       @Override
       public void start(Listener<RespT> responseListener, Metadata requestHeader) {
+        long startNanos = ticker.read();
+        Stopwatch sw = Stopwatch.createStarted();
         super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(
             responseListener) {
           @Override
           public void onHeaders(Metadata responseHeader) {
-            System.err.println("Leaf client sees request elapsed with " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
+            System.err.println("Leaf client request time from ticker: " + (ticker.read() - startNanos)  + " nanos.");
+            System.err.println("Leaf client request time from stopwatch: " + sw.elapsed().getNano() + " nanos.");
+            System.err.println("Leaf client sees from metadata: " + Integer.parseInt(responseHeader.get(elapsedTimeKey)) + " nanos.");
             super.onHeaders(responseHeader);
           }
         }, requestHeader);
