@@ -48,6 +48,26 @@ interface ServerProducerGraph {
 
   }
 
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface SerialOrParallel {
+
+  }
+
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface Serial {
+
+  }
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface Parallel {
+
+  }
+
   @ProducerModule
   class ServerProducerModule {
 
@@ -91,10 +111,9 @@ interface ServerProducerGraph {
     @Produces
     static GetReply get(
         GetRequest request,
-        // TODO: make this conditional.
         B2Reply b2Reply,
         C1Reply c1Reply,
-        C2Reply c2Reply,
+        @SerialOrParallel C2Reply c2Reply,
         Map<String, String> cache,
         Map<Integer, CriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
@@ -113,6 +132,17 @@ interface ServerProducerGraph {
     }
 
     @Produces
+    @SerialOrParallel
+    static ListenableFuture<C2Reply> callC2SerialOrParallel(
+        GetRequest request, @Parallel Producer<C2Reply> parallelC2Reply, @Serial Producer<C2Reply> serialC2Reply) {
+      if (request.getKey().equals("CallC2InSeries")) {
+        return serialC2Reply.get();
+      } else {
+        return parallelC2Reply.get();
+      }
+    }
+
+    @Produces
     static ListenableFuture<B1Reply> callB1(BGrpc.BFutureStub stub, PutRequest request) {
       return stub.b1(B1Request.getDefaultInstance());
     }
@@ -128,7 +158,14 @@ interface ServerProducerGraph {
     }
 
     @Produces
-    static ListenableFuture<C2Reply> callC2(CGrpc.CFutureStub stub, GetRequest request) {
+    @Parallel
+    static ListenableFuture<C2Reply> callC2InParallel(CGrpc.CFutureStub stub, GetRequest request) {
+      return stub.c2(C2Request.getDefaultInstance());
+    }
+
+    @Produces
+    @Serial
+    static ListenableFuture<C2Reply> callC2InSeries(CGrpc.CFutureStub stub, B2Reply b2Reply, GetRequest request) {
       return stub.c2(C2Request.getDefaultInstance());
     }
   }
