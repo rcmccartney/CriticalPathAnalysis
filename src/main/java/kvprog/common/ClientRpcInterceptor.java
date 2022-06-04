@@ -5,16 +5,13 @@ import com.google.common.cache.Cache;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.*;
 import kvprog.common.InterceptorModule.TraceIdKey;
-import kvprog.common.InterceptorModule.CriticalPaths;
 import kvprog.common.InterceptorModule.CostListKey;
 import kvprog.CostList;
 import javax.inject.Inject;
 import java.time.Duration;
-import java.util.Map;
 
 public class ClientRpcInterceptor implements ClientInterceptor {
   private final Cache<Integer, Long> parallelRpcMonitor;
-  private final Map<Integer, CriticalPath> criticalPaths;
   private final Metadata.Key<byte[]> costListKey;
   private final Metadata.Key<String> traceIdMetadataKey;
   private final Ticker ticker;
@@ -22,12 +19,10 @@ public class ClientRpcInterceptor implements ClientInterceptor {
   @Inject
   ClientRpcInterceptor(
       Cache<Integer, Long> parallelRpcMonitor,
-      @CriticalPaths Map<Integer, CriticalPath> criticalPaths,
       @CostListKey Metadata.Key<byte[]> costListKey,
       @TraceIdKey Metadata.Key<String> traceIdMetadataKey,
       Ticker ticker) {
     this.parallelRpcMonitor = parallelRpcMonitor;
-    this.criticalPaths = criticalPaths;
     this.costListKey = costListKey;
     this.traceIdMetadataKey = traceIdMetadataKey;
     this.ticker = ticker;
