@@ -18,41 +18,47 @@ async function getCriticalPaths() {
         });
 }
 
-const width = 1000;
-const height = 450;
-const margin = { top: 50, bottom: 50, left: 50, right: 50 };
+let data = getCriticalPaths()
 
-function addToDropdown (result) {
-    const criticalPathElementListList = result.map(element => element.getElementList());
+async function addToDropdown () {
+    let data_present = await data;
     const list_element = document.getElementById("list");
-    for (let i=0; i< list_element.length; i++) {
-        list_element.remove(i);
-    }
-    for (let i = 0; i < criticalPathElementListList.length; i++) {
+    for (let i = 0; i < data_present.length; i++) {
         let option = document.createElement("option");
         option.value = i;
-        option.text = "Request-"+ i;
+        option.text = "Request-" + i;
         list_element.appendChild(option);
     }
+}
 
-   /* var criticalPathElementList = criticalPathElementListList[0];
+function slice (str, char) {
+    return str.substring(str.lastIndexOf(char)+1);
+}
+
+async function graph (path_number) {
+    let data_present = await data;
+    const criticalPathElementListList = data_present.map(element => element.getElementList());
+    const criticalPathElementList = criticalPathElementListList[path_number];
+    let pathElementNodes = [];
     for(let i = 0; i < criticalPathElementList.length; i++) {
-        let index = criticalPathElementList[i].getSource().lastIndexOf("/");
+        const str = slice(slice(slice(criticalPathElementList[i].getSource(), "/"), "."), "_");
         const cost = criticalPathElementList[i].getCostSec();
-        const source = criticalPathElementList[i].getSource().substring(index+1);
-        costElement.push({source, cost});
+        pathElementNodes.push(cost);
     }
-    console.log(costElement);
-    var svg = d3.select('#bar-graph').append('svg').
-                    attr('height', 450).attr('width', 2000);
+    console.log(pathElementNodes);
+    d3.select('#graph').select("*").remove();
+    var svg = d3.select('#graph')
+        .append('svg')
+        .attr('height', 450)
+        .attr('width', 2000);
 
     svg.selectAll('circle')
-            .data(costElement)
-            .enter().append('circle')
-            .attr('cx', function(d, i) {return 200 + (i * 80)})
-            .attr('cy','300')
-            .attr('r', 20)
-            .style('fill', 'green');
+        .data(pathElementNodes)
+        .enter().append('circle')
+        .attr('cx', function(d, i) {return 200 + (i * 80)})
+        .attr('cy','300')
+        .attr('r', 20)
+        .style('fill', 'green');
 
     var x =  220;
     for (let i = 0; i < criticalPathElementList.length-1; i++) {
@@ -71,26 +77,17 @@ function addToDropdown (result) {
             .text('eg');
         x = x2 + 40;
     }
-    return svg.node();*/
 }
 
-async function f1() {
-    let response = await getCriticalPaths();
-    addToDropdown(response);
-    return response;
-}
-
-async function protoPrint(response, value) {
-    let criticalPathList = await response;
-    document.getElementById("json").textContent = JSON.stringify(criticalPathList[value].array, undefined, 2);
+async function protoPrint(value) {
+    let data_present = await data;
+    document.getElementById("json").textContent = JSON.stringify(data_present[value].array, undefined, 2);
 }
 
 const dropDown = document.getElementById('list');
-dropDown.addEventListener('click', (event) => {
-    f1();
+dropDown.addEventListener('change', (event) => {
+    protoPrint(event.target.value);
+    graph(event.target.value)
 });
 
-dropDown.addEventListener('change', (event) => {
-    let response = f1();
-    protoPrint(response, event.target.value);
-});
+addToDropdown();
