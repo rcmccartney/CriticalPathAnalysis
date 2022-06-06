@@ -15,7 +15,6 @@ import javax.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.HashMap;
 import java.util.Map;
 
 @CallScoped
@@ -77,7 +76,7 @@ interface ServerProducerGraph {
         B1Reply b1Reply,
         @Conditional GetReply getReply,
         Map<String, String> cache,
-        Map<Integer, CriticalPath> criticalPaths,
+        Map<Integer, InternalCriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
       PutReply reply;
       if (request.getKey().length() > 64 || request.getValue().length() > 512) {
@@ -115,7 +114,7 @@ interface ServerProducerGraph {
         C1Reply c1Reply,
         @SerialOrParallel C2Reply c2Reply,
         Map<String, String> cache,
-        Map<Integer, CriticalPath> criticalPaths,
+        Map<Integer, InternalCriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
       GetReply reply;
       if (request.getKey().length() > 64) {
@@ -185,7 +184,7 @@ interface ServerProducerGraph {
 
     abstract Map<String, String> cache();
 
-    abstract Map<Integer, CriticalPath> criticalPaths();
+    abstract Map<Integer, InternalCriticalPath> criticalPaths();
 
     abstract GetRequest getRequest();
 
@@ -202,7 +201,7 @@ interface ServerProducerGraph {
 
       abstract Builder setCache(Map<String, String> value);
 
-      abstract Builder setCriticalPaths(Map<Integer, CriticalPath> value);
+      abstract Builder setCriticalPaths(Map<Integer, InternalCriticalPath> value);
 
       abstract Builder setGetRequest(GetRequest value);
 

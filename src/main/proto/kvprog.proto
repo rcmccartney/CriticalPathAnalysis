@@ -49,11 +49,7 @@ message CallsRequest {
 }
 
 message CallsReply {
-  repeated CostList cost_list = 1;
-  // Each RPC & Producer Node contributes a path element, which includes a name & duration.
-  // TODO: This currently is the full execution graph, but we may only want a single Critical Path
-  // which can be modeled linearly.
-  repeated PathElement path_element = 2;
+  repeated CriticalPath critical_path = 1;
 }
 
 // An element of the critical path.
@@ -65,27 +61,19 @@ message CallsReply {
 // }
 // produceOut# will be one PathElement, with a sub_element of getOutService.
 // The duration of this element will be the generateRequest# computation, and
-// the latency of the RPC call will show up in the sub_element.
+// the latency of the RPC call will show up in a different child path_element.
 message PathElement {
-  // Name of this PathElement.
-  optional string id = 3;
-
-  // Duration of this PathElement, in micros.
-  optional int64 duration_micros = 1;
-
-  // Child elements on the path.
-  repeated PathElement sub_elements = 2;
-}
-
-message CostElement {
   // This should be a specific path to the location the cost was incurred.
   // Examples include a path in the producer graph log or the RPCStats tree.
   optional string source = 1;
-  // How much time was consumed by this entry.
+  // How much time was consumed by this entry, in seconds.
   optional double cost_sec = 2;
 }
 
-// An ordered sequence of cost items.
-message CostList {
-  repeated CostElement element = 1;
+// An ordered sequence of path elements.
+//
+// Each RPC & Producer Node contributes a path element, which includes a name & duration.
+// Each critical path is not the full execution graph, but a linear walk through the graph.
+message CriticalPath {
+  repeated PathElement element = 1;
 }

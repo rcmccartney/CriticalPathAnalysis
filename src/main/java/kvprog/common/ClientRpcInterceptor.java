@@ -5,25 +5,25 @@ import com.google.common.cache.Cache;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.*;
 import kvprog.common.InterceptorModule.TraceIdKey;
-import kvprog.common.InterceptorModule.CostListKey;
-import kvprog.CostList;
+import kvprog.common.InterceptorModule.CriticalPathKey;
+import kvprog.CriticalPath;
 import javax.inject.Inject;
 import java.time.Duration;
 
 public class ClientRpcInterceptor implements ClientInterceptor {
   private final Cache<Integer, Long> parallelRpcMonitor;
-  private final Metadata.Key<byte[]> costListKey;
+  private final Metadata.Key<byte[]> criticalPathKey;
   private final Metadata.Key<String> traceIdMetadataKey;
   private final Ticker ticker;
 
   @Inject
   ClientRpcInterceptor(
       Cache<Integer, Long> parallelRpcMonitor,
-      @CostListKey Metadata.Key<byte[]> costListKey,
+      @CriticalPathKey Metadata.Key<byte[]> criticalPathKey,
       @TraceIdKey Metadata.Key<String> traceIdMetadataKey,
       Ticker ticker) {
     this.parallelRpcMonitor = parallelRpcMonitor;
-    this.costListKey = costListKey;
+    this.criticalPathKey = criticalPathKey;
     this.traceIdMetadataKey = traceIdMetadataKey;
     this.ticker = ticker;
   }
@@ -72,7 +72,7 @@ public class ClientRpcInterceptor implements ClientInterceptor {
     }
 
     try {
-      CostList cl = CostList.parseFrom(responseHeader.get(costListKey));
+      CriticalPath cl = CriticalPath.parseFrom(responseHeader.get(criticalPathKey));
       ledger.addRemoteCriticalPath(cl);
     } catch (InvalidProtocolBufferException e) {
       e.printStackTrace();

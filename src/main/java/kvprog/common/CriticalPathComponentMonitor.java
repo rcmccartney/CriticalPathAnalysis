@@ -7,7 +7,7 @@ import dagger.grpc.server.CallScoped;
 import dagger.producers.monitoring.ProducerMonitor;
 import dagger.producers.monitoring.ProducerToken;
 import dagger.producers.monitoring.ProductionComponentMonitor;
-import kvprog.CostList;
+import kvprog.CriticalPath;
 import kvprog.client.LoadGenerator;
 import kvprog.cserver.CServer;
 
@@ -53,7 +53,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
   public static final class Factory extends ProductionComponentMonitor.Factory implements CriticalPathSupplier {
     private static final Logger c = Logger.getLogger(CServer.class.getName());
 
-    private final ChildCostLists childCostLists;
+    private final ChildCriticalPaths childCriticalPaths;
     // Map of the component name to the monitor for it. This is a singleton unless you use SubComponents in your
     // graph of execution.
     private final Map<String, CriticalPathComponentMonitor> componentMonitors = new LinkedHashMap<>();
@@ -63,10 +63,10 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
 
     @Inject
     Factory(
-        ChildCostLists childCostLists,
+        ChildCriticalPaths childCriticalPaths,
         ProductionExecutionOrderComponentMonitor.Factory productionExecutionMonitorFactory,
         Namer componentNamer) {
-      this.childCostLists = childCostLists;
+      this.childCriticalPaths = childCriticalPaths;
       this.productionExecutionMonitorFactory = productionExecutionMonitorFactory;
       this.componentNamer = componentNamer;
       this.ticker = Ticker.systemTicker();
@@ -104,17 +104,17 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      *
      * <p>This algorithm is simplified by assuming execution is on a single request thread.
      */
-    public synchronized CriticalPath criticalPath() {
+    public synchronized InternalCriticalPath criticalPath() {
       if (componentMonitors.isEmpty()) {
         logger.severe("No Component Monitor found to calculate critical path!");
-        return CriticalPath.empty();
+        return InternalCriticalPath.empty();
       }
 
       ImmutableList<ComponentProducerToken> executionOrder =
           productionExecutionMonitorFactory.getExecutionOrder();
       if (executionOrder.isEmpty()) {
         logger.severe("No execution order found to calculate critical path!");
-        return CriticalPath.empty();
+        return InternalCriticalPath.empty();
       }
 
       int index = executionOrder.size() - 1;
@@ -127,18 +127,18 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       logger.info("Critical path start node: " + sink);
       ImmutableList<ComponentProducerToken> rpcCompletionOrder =
           executionOrder.subList(0, index).stream()
-              .filter(childCostLists::isRpcNode)
+              .filter(childCriticalPaths::isRpcNode)
               .sorted(Comparator.comparingLong(cpt -> getProducerMonitor(cpt).endTimeNanos()))
               .collect(ImmutableList.toImmutableList());
 
-      return CriticalPath.create(
-          CriticalPath.Node.builder()
+      return InternalCriticalPath.create(
+          InternalCriticalPath.Node.builder()
               .name(sink.componentName())
               .cpu(Duration.ofNanos(0))
               // If this is called in the sink, endTime will be now().
               .latency(Duration.ofNanos(getProducerMonitor(sink).endTimeNanos()))
               .childCriticalPath(buildCriticalPathFromSink(
-                  sink, index, rpcCompletionOrder, executionOrder, childCostLists))
+                  sink, index, rpcCompletionOrder, executionOrder, childCriticalPaths))
               .build());
     }
 
@@ -148,13 +148,13 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
      * started immediately prior to the current node or adding the most recently initiated RPC node
      * to the critical path. Make this decision using by minimizing the estimated slack time.
      */
-    private CriticalPath buildCriticalPathFromSink(
+    private InternalCriticalPath buildCriticalPathFromSink(
         ComponentProducerToken sink,
         int index,
         ImmutableList<ComponentProducerToken> rpcCompletionOrder,
         ImmutableList<ComponentProducerToken> executionOrder,
-        ChildCostLists childCostLists) {
-      CriticalPath.Builder builder = CriticalPath.builder();
+        ChildCriticalPaths childCriticalPaths) {
+      InternalCriticalPath.Builder builder = InternalCriticalPath.builder();
       ComponentProducerToken currentCriticalProducer = sink;
       List<ComponentProducerToken> criticalPath = new ArrayList<>();
       criticalPath.add(currentCriticalProducer);
@@ -202,13 +202,13 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       long frameworkLatencyNanos = 0;
       CriticalPathProducerMonitor currentRecorder = null;
       CriticalPathProducerMonitor previousRecorder = null;
-      ImmutableListMultimap<ComponentProducerToken, CostList> tokenToCostList =
-          childCostLists.costLists();
+      ImmutableListMultimap<ComponentProducerToken, CriticalPath> tokenToCriticalPath =
+          childCriticalPaths.criticalPaths();
       for (ComponentProducerToken token : criticalPath) {
         long latencyNanos;
         currentRecorder = getProducerMonitor(token);
-        ImmutableList<CostList> costLists =
-            tokenToCostList.entries().stream()
+        ImmutableList<CriticalPath> criticalPaths =
+            tokenToCriticalPath.entries().stream()
                 .filter(map -> map.getKey().producerToken().equals(token.producerToken()))
                 .map(Map.Entry::getValue)
                 .collect(ImmutableList.toImmutableList());
@@ -222,7 +222,7 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
           // If current node is a RPC node and its end time is later than the start time of
           // previous(backward) node, then this RPC node is picked on CPU finish time basis.
           boolean isRpcNodePickedByCpuSlack =
-              childCostLists.isRpcNode(token)
+              childCriticalPaths.isRpcNode(token)
                   && currentRecorder.endTimeNanos() > previousRecorder.startTimeNanos();
           if (isRpcNodePickedByCpuSlack) {
             // Introduce a child element to account for a portion of current rpc node's RPC time.
@@ -231,19 +231,19 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
             long rpcGapNanos =
                 previousRecorder.startTimeNanos()
                     - (currentRecorder.startTimeNanos() + currentRecorder.cpuNanos());
-            costLists =
+            criticalPaths =
                 rpcGapNanos > 0
-                    ? childCostListsFromLatencyNanos("rpc-gap", rpcGapNanos)
+                    ? childCriticalPathsFromLatencyNanos("rpc-gap", rpcGapNanos)
                     : ImmutableList.of();
           }
           frameworkLatencyNanos += previousRecorder.startTimeNanos() - endTimeNanos;
         }
-        builder.addNode(criticalPathNodeFromProducer(costLists, token, latencyNanos));
+        builder.addNode(criticalPathNodeFromProducer(criticalPaths, token, latencyNanos));
         previousRecorder = currentRecorder;
       }
       if (frameworkLatencyNanos > 0) {
         builder.addNode(
-            CriticalPath.Node.builder()
+            InternalCriticalPath.Node.builder()
                 .name(
                 "<framework>")
                 .cpu(Duration.ofNanos(frameworkLatencyNanos))
@@ -254,21 +254,21 @@ public final class CriticalPathComponentMonitor extends ProductionComponentMonit
       return builder.build();
     }
 
-    private CriticalPath.Node criticalPathNodeFromProducer(
-        ImmutableList<CostList> childCostLists, ComponentProducerToken producer, long latencyNanos) {
+    private InternalCriticalPath.Node criticalPathNodeFromProducer(
+        ImmutableList<CriticalPath> childCriticalPaths, ComponentProducerToken producer, long latencyNanos) {
       CriticalPathProducerMonitor producerRecorder = getProducerMonitor(producer);
-      return CriticalPath.Node.builder()
+      return InternalCriticalPath.Node.builder()
           .name(Namer.producerName(producer.producerToken()))
           .cpu(Duration.ofNanos(Math.min(latencyNanos, producerRecorder.cpuNanos())))
           .latency(Duration.ofNanos(latencyNanos))
-          .childCostLists(childCostLists)
+          .childCriticalPaths(childCriticalPaths)
           .build();
     }
 
-    private ImmutableList<CostList> childCostListsFromLatencyNanos(
+    private ImmutableList<CriticalPath> childCriticalPathsFromLatencyNanos(
         String nodeName, long latencyNanos) {
-      CostList.Builder builder = CostList.newBuilder();
-      builder.addElement(CriticalPath.newCostElement("/" + nodeName, Duration.ofNanos(latencyNanos)));
+      CriticalPath.Builder builder = CriticalPath.newBuilder();
+      builder.addElement(InternalCriticalPath.newCostElement("/" + nodeName, Duration.ofNanos(latencyNanos)));
       return ImmutableList.of(builder.build());
     }
   }

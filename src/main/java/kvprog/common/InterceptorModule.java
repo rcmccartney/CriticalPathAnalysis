@@ -39,7 +39,7 @@ public class InterceptorModule {
   @Singleton // Shared between all requests.
   @Provides
   @CriticalPaths
-  static Map<Integer, CriticalPath> provideCriticalPaths() {
+  static Map<Integer, InternalCriticalPath> provideCriticalPaths() {
     return new HashMap<>();
   }
 
@@ -66,9 +66,9 @@ public class InterceptorModule {
 
   @Singleton
   @Provides
-  @CostListKey
-  Metadata.Key<byte[]> provideCostListKey() {
-    return Metadata.Key.of("cost_list-bin", Metadata.BINARY_BYTE_MARSHALLER);
+  @CriticalPathKey
+  Metadata.Key<byte[]> provideCriticalPathKey() {
+    return Metadata.Key.of("critical_path-bin", Metadata.BINARY_BYTE_MARSHALLER);
   }
 
   @Singleton
@@ -108,7 +108,7 @@ public class InterceptorModule {
   @Qualifier
   @Documented
   @Retention(RetentionPolicy.RUNTIME)
-  public @interface CostListKey {
+  public @interface CriticalPathKey {
 
   }
 }

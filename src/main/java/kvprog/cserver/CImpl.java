@@ -14,16 +14,16 @@ import kvprog.C2Reply;
 import kvprog.C2Request;
 import kvprog.CGrpc;
 import kvprog.CGrpc.CImplBase;
-import kvprog.common.CriticalPath;
+import kvprog.common.InternalCriticalPath;
 import kvprog.common.InterceptorModule.CriticalPaths;
 
 @GrpcService(grpcClass = CGrpc.class)
 public class CImpl extends CImplBase {
 
-  private final Map<Integer, CriticalPath> criticalPaths;
+  private final Map<Integer, InternalCriticalPath> criticalPaths;
 
   @Inject
-  public CImpl(@CriticalPaths Map<Integer, CriticalPath> criticalPaths) {
+  public CImpl(@CriticalPaths Map<Integer, InternalCriticalPath> criticalPaths) {
     this.criticalPaths = criticalPaths;
   }
 

@@ -43,7 +43,7 @@ interface CsProducerGraph {
     @Produces
     static C1Reply c1(
         C1Request request,
-        Map<Integer, CriticalPath> criticalPaths,
+        Map<Integer, InternalCriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return C1Reply.getDefaultInstance();
@@ -53,7 +53,7 @@ interface CsProducerGraph {
     static C2Reply c2(
         C1Reply c1Reply,
         C2Request c2Request,
-        Map<Integer, CriticalPath> criticalPaths,
+        Map<Integer, InternalCriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return C2Reply.getDefaultInstance();
@@ -62,7 +62,7 @@ interface CsProducerGraph {
 
   @AutoValue
   abstract class Input {
-    abstract Map<Integer, CriticalPath> criticalPaths();
+    abstract Map<Integer, InternalCriticalPath> criticalPaths();
 
     abstract C1Request c1Request();
 
@@ -73,7 +73,7 @@ interface CsProducerGraph {
 
       abstract Input autoBuild();
 
-      abstract Builder setCriticalPaths(Map<Integer, CriticalPath> value);
+      abstract Builder setCriticalPaths(Map<Integer, InternalCriticalPath> value);
 
       abstract Builder setC1Request(C1Request value);
 

@@ -15,17 +15,17 @@ import kvprog.B2Request;
 import kvprog.BGrpc;
 import kvprog.BGrpc.BImplBase;
 import kvprog.CGrpc;
-import kvprog.common.CriticalPath;
+import kvprog.common.InternalCriticalPath;
 import kvprog.common.InterceptorModule.CriticalPaths;
 
 @GrpcService(grpcClass = BGrpc.class)
 public class BImpl extends BImplBase {
 
   private final CGrpc.CFutureStub stub;
-  private final Map<Integer, CriticalPath> criticalPaths;
+  private final Map<Integer, InternalCriticalPath> criticalPaths;
 
   @Inject
-  public BImpl(CGrpc.CFutureStub stub, @CriticalPaths Map<Integer, CriticalPath> criticalPaths) {
+  public BImpl(CGrpc.CFutureStub stub, @CriticalPaths Map<Integer, InternalCriticalPath> criticalPaths) {
     this.stub = stub;
     this.criticalPaths = criticalPaths;
   }

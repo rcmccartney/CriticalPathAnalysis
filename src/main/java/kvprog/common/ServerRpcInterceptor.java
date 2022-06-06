@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Singleton
 public class ServerRpcInterceptor implements ServerInterceptor {
 
-  private final Map<Integer, CriticalPath> criticalPaths;
-  private final Metadata.Key<byte[]> costListKey;
+  private final Map<Integer, InternalCriticalPath> criticalPaths;
+  private final Metadata.Key<byte[]> criticalPathKey;
   private final AtomicInteger traceId;
   private final Metadata.Key<String> traceIdMetadataKey;
   private final Metadata.Key<String> elapsedTimeKey;
@@ -22,14 +22,14 @@ public class ServerRpcInterceptor implements ServerInterceptor {
 
   @Inject
   ServerRpcInterceptor(
-      @CriticalPaths Map<Integer, CriticalPath> criticalPaths,
-      @CostListKey Metadata.Key<byte[]> costListKey,
+      @CriticalPaths Map<Integer, InternalCriticalPath> criticalPaths,
+      @CriticalPathKey Metadata.Key<byte[]> criticalPathKey,
       @TraceId AtomicInteger traceId,
       @TraceIdKey Metadata.Key<String> traceIdMetadataKey,
       @ElapsedTimeKey Metadata.Key<String> elapsedTimeKey,
       Ticker ticker) {
     this.criticalPaths = criticalPaths;
-    this.costListKey = costListKey;
+    this.criticalPathKey = criticalPathKey;
     this.traceId = traceId;
     this.traceIdMetadataKey = traceIdMetadataKey;
     this.elapsedTimeKey = elapsedTimeKey;
@@ -59,7 +59,7 @@ public class ServerRpcInterceptor implements ServerInterceptor {
             responseHeaders.put(elapsedTimeKey, Long.toString(ticker.read() - startNanos));
             // If this is from the frontend, we have no critical path to send.
             if (criticalPaths.get(serverSpan) != null) {
-              responseHeaders.put(costListKey, criticalPaths.get(serverSpan).toCostList().toByteArray());
+              responseHeaders.put(criticalPathKey, criticalPaths.get(serverSpan).toCriticalPath().toByteArray());
             }
             super.sendHeaders(responseHeaders);
           }

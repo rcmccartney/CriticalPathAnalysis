@@ -7,7 +7,7 @@ import io.perfmark.TaskCloseable;
 import io.perfmark.traceviewer.TraceEventViewer;
 import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreImplBase;
-import kvprog.common.CriticalPath;
+import kvprog.common.InternalCriticalPath;
 import kvprog.common.InterceptorModule.CriticalPaths;
 import kvprog.toplevelserver.TopComponentModule.Cache;
 
@@ -21,14 +21,14 @@ import java.util.concurrent.ExecutionException;
 class KvStoreImpl extends KvStoreImplBase {
 
   private final Map<String, String> cache;
-  private final Map<Integer, CriticalPath> criticalPaths;
+  private final Map<Integer, InternalCriticalPath> criticalPaths;
   private final BGrpc.BFutureStub bstub;
   private final CGrpc.CFutureStub cstub;
 
   @Inject
   KvStoreImpl(
       @Cache Map<String, String> cache,
-      @CriticalPaths Map<Integer, CriticalPath> criticalPaths,
+      @CriticalPaths Map<Integer, InternalCriticalPath> criticalPaths,
       BGrpc.BFutureStub bstub,
       CGrpc.CFutureStub cstub) {
     this.cache = cache;
@@ -63,7 +63,7 @@ class KvStoreImpl extends KvStoreImplBase {
     }
 
     Optional<Integer> lastSpan = criticalPaths.keySet().stream().max(Integer::compareTo);
-    lastSpan.ifPresent(spanId -> System.err.println("Cost list of PutRequest: " + criticalPaths.get(spanId).toCostList()));
+    lastSpan.ifPresent(spanId -> System.err.println("Cost list of PutRequest: " + criticalPaths.get(spanId).toCriticalPath()));
   }
 
   @Override
@@ -91,14 +91,14 @@ class KvStoreImpl extends KvStoreImplBase {
     }
 
     Optional<Integer> lastSpan = criticalPaths.keySet().stream().max(Integer::compareTo);
-    lastSpan.ifPresent(spanId -> System.err.println("Cost list of GetRequest: " + criticalPaths.get(spanId).toCostList()));
+    lastSpan.ifPresent(spanId -> System.err.println("Cost list of GetRequest: " + criticalPaths.get(spanId).toCriticalPath()));
   }
 
   @Override
   public void calls(CallsRequest req, StreamObserver<CallsReply> responseObserver) {
     CallsReply.Builder reply = CallsReply.newBuilder();
-    criticalPaths.values().stream().map(CriticalPath::toCostList)
-            .forEach(reply::addCostList);
+    criticalPaths.values().stream().map(InternalCriticalPath::toCriticalPath)
+            .forEach(reply::addCriticalPath);
     responseObserver.onNext(reply.build());
     responseObserver.onCompleted();
   }

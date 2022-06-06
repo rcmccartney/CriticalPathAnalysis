@@ -54,7 +54,7 @@ interface BsProducerGraph {
     static B1Reply b1(
         B1Request request,
         B2Reply reply,
-        Map<Integer, CriticalPath> criticalPaths,
+        Map<Integer, InternalCriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return B1Reply.getDefaultInstance();
@@ -63,7 +63,7 @@ interface BsProducerGraph {
     @Produces
     static B2Reply b2(
         @Conditional C1Reply c1Reply,
-        Map<Integer, CriticalPath> criticalPaths,
+        Map<Integer, InternalCriticalPath> criticalPaths,
         CriticalPathSupplier supplier) {
       criticalPaths.put(Constants.TRACE_ID_CTX_KEY.get(), supplier.criticalPath());
       return B2Reply.getDefaultInstance();
@@ -90,7 +90,7 @@ interface BsProducerGraph {
 
     abstract CGrpc.CFutureStub cStub();
 
-    abstract Map<Integer, CriticalPath> criticalPaths();
+    abstract Map<Integer, InternalCriticalPath> criticalPaths();
 
     abstract B1Request b1Request();
 
@@ -103,7 +103,7 @@ interface BsProducerGraph {
 
       abstract Builder setCStub(CGrpc.CFutureStub value);
 
-      abstract Builder setCriticalPaths(Map<Integer, CriticalPath> value);
+      abstract Builder setCriticalPaths(Map<Integer, InternalCriticalPath> value);
 
       abstract Builder setB1Request(B1Request value);
 

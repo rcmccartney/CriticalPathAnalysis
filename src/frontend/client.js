@@ -10,10 +10,10 @@ enableDevTools([
   client,
 ]);
 
-async function getCostList() {
+async function getCriticalPaths() {
     return new Promise(resolve => {
         client.calls(request, {}, (err, response) => {
-                resolve(response.getCostListList());
+                resolve(response.getCriticalPathList());
             });
         });
 }
@@ -23,23 +23,23 @@ const height = 450;
 const margin = { top: 50, bottom: 50, left: 50, right: 50 };
 
 function addToDropdown (result) {
-    const costELementList = result.map(element => element.getElementList());
+    const criticalPathElementListList = result.map(element => element.getElementList());
     const list_element = document.getElementById("list");
     for (let i=0; i< list_element.length; i++) {
         list_element.remove(i);
     }
-    for (let i = 0; i < costELementList.length; i++) {
+    for (let i = 0; i < criticalPathElementListList.length; i++) {
         let option = document.createElement("option");
         option.value = i;
         option.text = "Request-"+ i;
         list_element.appendChild(option);
     }
 
-   /* var firstElement = costELementList[0];
-    for(let i = 0; i < firstElement.length; i++) {
-        let index = firstElement[i].getSource().lastIndexOf("/");
-        const cost = firstElement[i].getCostSec();
-        const source = firstElement[i].getSource().substring(index+1);
+   /* var criticalPathElementList = criticalPathElementListList[0];
+    for(let i = 0; i < criticalPathElementList.length; i++) {
+        let index = criticalPathElementList[i].getSource().lastIndexOf("/");
+        const cost = criticalPathElementList[i].getCostSec();
+        const source = criticalPathElementList[i].getSource().substring(index+1);
         costElement.push({source, cost});
     }
     console.log(costElement);
@@ -55,7 +55,7 @@ function addToDropdown (result) {
             .style('fill', 'green');
 
     var x =  220;
-    for (let i = 0; i < firstElement.length-1; i++) {
+    for (let i = 0; i < criticalPathElementList.length-1; i++) {
          var x2 = x+40;
          var line =  d3.select("svg")
                 .append("line")
@@ -75,14 +75,14 @@ function addToDropdown (result) {
 }
 
 async function f1() {
-    let response = await getCostList();
+    let response = await getCriticalPaths();
     addToDropdown(response);
     return response;
 }
 
 async function protoPrint(response, value) {
-    let requestCostLists = await response;
-    document.getElementById("json").textContent = JSON.stringify(requestCostLists[value].array, undefined, 2);
+    let criticalPathList = await response;
+    document.getElementById("json").textContent = JSON.stringify(criticalPathList[value].array, undefined, 2);
 }
 
 const dropDown = document.getElementById('list');

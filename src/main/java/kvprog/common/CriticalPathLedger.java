@@ -1,6 +1,6 @@
 package kvprog.common;
 
-import kvprog.CostList;
+import kvprog.CriticalPath;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.time.Duration;
@@ -12,9 +12,9 @@ import java.time.Duration;
 @ThreadSafe
 public class CriticalPathLedger {
   private final ComponentProducerToken token;
-  private final ChildCostLists lists;
+  private final ChildCriticalPaths lists;
 
-  CriticalPathLedger(ComponentProducerToken token, ChildCostLists lists) {
+  CriticalPathLedger(ComponentProducerToken token, ChildCriticalPaths lists) {
     this.token = token;
     this.lists = lists;
   }
@@ -28,8 +28,8 @@ public class CriticalPathLedger {
    *             critical to the producer, so if a producer calls several things in parallel, it is
    *             responsible for choosing the one that is critical.
    */
-  public synchronized void addRemoteCriticalPath(CostList path) {
-    lists.addCostList(token, path, true);
+  public synchronized void addRemoteCriticalPath(CriticalPath path) {
+    lists.addCriticalPath(token, path, true);
     recordRpcNode();
   }
 

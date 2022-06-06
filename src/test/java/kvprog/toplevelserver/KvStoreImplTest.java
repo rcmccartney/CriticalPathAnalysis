@@ -10,7 +10,7 @@ import kvprog.*;
 import kvprog.KvStoreGrpc.KvStoreBlockingStub;
 import kvprog.PutReply.Status;
 import kvprog.bserver.BImpl;
-import kvprog.common.CriticalPath;
+import kvprog.common.InternalCriticalPath;
 import kvprog.cserver.CImpl;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,7 +50,7 @@ public class KvStoreImplTest {
     String cServerName = InProcessServerBuilder.generateName();
     Multiset<String> calls = ConcurrentHashMultiset.create();
     HashMap<String, String> cache = new HashMap<>();
-    HashMap<Integer, CriticalPath> criticalPaths = new HashMap<>();
+    HashMap<Integer, InternalCriticalPath> criticalPaths = new HashMap<>();
 
     // Create a server, add service, start, and register for automatic graceful shutdown.
     grpcCleanup.register(InProcessServerBuilder

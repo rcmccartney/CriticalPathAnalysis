@@ -41,10 +41,10 @@ import javax.inject.Inject;
  */
 public class CriticalPathLedgerSupplier {
 
-  private final ChildCostLists lists;
+  private final ChildCriticalPaths lists;
 
   @Inject
-  CriticalPathLedgerSupplier(ChildCostLists lists) {
+  CriticalPathLedgerSupplier(ChildCriticalPaths lists) {
     this.lists = lists;
   }
 
